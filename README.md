@@ -34,7 +34,7 @@ com.divergia
 
 Regra de dependência: `adapter → application → domain`, nunca o inverso.
 
-## O que já existe (Fase 0)
+## O que já existe (Fases 0–2)
 
 - Estrutura de pacotes hexagonal com `package-info.java` documentando cada pacote
 - Virtual threads habilitadas (`spring.threads.virtual.enabled=true`)
@@ -52,6 +52,26 @@ Regra de dependência: `adapter → application → domain`, nunca o inverso.
 - Regra de retenção de dado (`PoliticaRetencaoDeTexto`) modelada como
   serviço de domínio puro: texto bruto de uma análise só é mantido se o
   usuário consentiu
+- `LlmPort` e `VectorStorePort` (`application/port/out`), sem que nenhum
+  caso de uso importe LangChain4j
+- Adapter de LLM (`adapter/out/llm`) via módulo OpenAI-compatible do
+  LangChain4j, apontado para a Abacus.AI/RouteLLM (modelo `claude-sonnet-5`)
+- Adapter de vetor (`adapter/out/vectorstore`) via LangChain4j + Gemini
+  (`gemini-embedding-001`, 768 dimensões — a Abacus.AI/RouteLLM não oferece
+  embeddings) sobre a tabela `exemplo_rag`/pgvector já criada na Fase 1
+- Testes de integração de ambos os adapters contra um servidor HTTP local
+  que imita as APIs reais — nenhuma chamada de rede real acontece em
+  `./mvnw test`/CI
+
+## Variáveis de ambiente adicionais (Fase 2)
+
+| Variável           | Uso                                      |
+|--------------------|-------------------------------------------|
+| `ABACUS_API_KEY`   | Chave da Abacus.AI/RouteLLM (LLM)          |
+| `ABACUS_BASE_URL`  | Default `https://routellm.abacus.ai/v1`    |
+| `ABACUS_MODEL_NAME`| Default `claude-sonnet-5`                  |
+| `GOOGLE_API_KEY`   | Chave do Google AI Studio (embedding Gemini) |
+| `GEMINI_MODEL_NAME`| Default `gemini-embedding-001`             |
 
 ## Pré-requisitos
 
