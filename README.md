@@ -45,6 +45,13 @@ Regra de dependência: `adapter → application → domain`, nunca o inverso.
   explicitamente liberada (só health e docs são públicos por enquanto —
   login/JWT chegam na Fase 3)
 - Suíte de testes cobrindo o contrato REST acima (`RestEndToEndTest`)
+- Domínio modelado (`Usuario`, `Consentimento`, `Analise`, `TrechoDeriva`,
+  `ExemploRag`) com entidades JPA equivalentes, mapper explícito entre as
+  duas, e migrations Flyway (`V1`–`V6`) — incluindo a coluna vetorial
+  (`pgvector`, 768 dimensões) de `exemplo_rag`
+- Regra de retenção de dado (`PoliticaRetencaoDeTexto`) modelada como
+  serviço de domínio puro: texto bruto de uma análise só é mantido se o
+  usuário consentiu
 
 ## Pré-requisitos
 
