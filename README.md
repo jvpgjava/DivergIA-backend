@@ -34,7 +34,7 @@ com.divergia
 
 Regra de dependência: `adapter → application → domain`, nunca o inverso.
 
-## O que já existe (Fases 0–2)
+## O que já existe (Fases 0–3)
 
 - Estrutura de pacotes hexagonal com `package-info.java` documentando cada pacote
 - Virtual threads habilitadas (`spring.threads.virtual.enabled=true`)
@@ -62,6 +62,15 @@ Regra de dependência: `adapter → application → domain`, nunca o inverso.
 - Testes de integração de ambos os adapters contra um servidor HTTP local
   que imita as APIs reais — nenhuma chamada de rede real acontece em
   `./mvnw test`/CI
+- Autenticação completa (RF01–RF05): cadastro (BCrypt custo 12), login
+  (JWT HS256, expiração curta), logout real (blacklist de `jti` em banco —
+  necessário porque JWT é stateless), recuperação de senha (token de uso
+  único com hash SHA-256, e-mail via SMTP do Gmail) e exclusão de conta
+  (cascata sobre análises/consentimentos)
+- Rate limiting em memória (Bucket4j) em `/api/auth/login` e
+  `/api/auth/cadastro` — 5 tentativas/minuto por IP
+- Endpoints REST em `/api/auth/*`, já documentados automaticamente no
+  Swagger (nenhum passo manual)
 
 ## Variáveis de ambiente adicionais (Fase 2)
 
@@ -72,6 +81,18 @@ Regra de dependência: `adapter → application → domain`, nunca o inverso.
 | `ABACUS_MODEL_NAME`| Default `claude-sonnet-5`                  |
 | `GOOGLE_API_KEY`   | Chave do Google AI Studio (embedding Gemini) |
 | `GEMINI_MODEL_NAME`| Default `gemini-embedding-001`             |
+
+## Variáveis de ambiente adicionais (Fase 3)
+
+| Variável              | Uso                                            | Default no perfil `dev`      |
+|------------------------|--------------------------------------------------|--------------------------------|
+| `JWT_SECRET`           | Chave de assinatura do JWT (HS256, mín. 32 chars) | placeholder inseguro (só dev)  |
+| `JWT_EXPIRACAO_MINUTOS`| Validade do access token                          | `15`                            |
+| `GMAIL_USERNAME`       | Conta Gmail usada para enviar e-mail de recuperação | vazio (envio falha sem isso)  |
+| `GMAIL_APP_PASSWORD`   | *App Password* do Gmail (não é a senha da conta)  | vazio                           |
+
+No perfil `prod`, `JWT_SECRET` é obrigatório (sem default) — igual às
+credenciais de banco.
 
 ## Pré-requisitos
 
@@ -118,8 +139,10 @@ A aplicação sobe em `http://localhost:8080`:
 - Documentação interativa (Swagger UI): `http://localhost:8080/swagger-ui/index.html`
 - Especificação OpenAPI (JSON): `http://localhost:8080/v3/api-docs`
 
-Qualquer outra rota exige autenticação (ainda não implementada — chega na
-Fase 3) e responde `401`/`403`.
+Endpoints de autenticação: `POST /api/auth/{cadastro,login,recuperar-senha,redefinir-senha}`
+(públicos) e `POST /api/auth/logout` / `DELETE /api/auth/conta` (exigem
+`Authorization: Bearer <token>`). Qualquer outra rota exige autenticação e
+responde `401`/`403`.
 
 ## Rodando os testes
 

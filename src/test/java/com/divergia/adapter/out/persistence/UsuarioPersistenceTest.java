@@ -38,4 +38,19 @@ class UsuarioPersistenceTest {
         assertThat(encontrado.get().getEmail()).isEqualTo(usuario.getEmail());
         assertThat(encontrado.get().getSenhaHash()).isEqualTo("hash-bcrypt-fake");
     }
+
+    @Test
+    void deveBuscarUsuarioPorEmailEIndicarExistencia() {
+        String email = "busca-por-email+" + UUID.randomUUID() + "@example.com";
+        UsuarioJpaEntity usuario = new UsuarioJpaEntity(
+                UUID.randomUUID(), "Bia Teste", email, "hash-bcrypt-fake", Instant.now());
+
+        entityManager.persistAndFlush(usuario);
+        entityManager.clear();
+
+        assertThat(repository.existsByEmail(email)).isTrue();
+        assertThat(repository.existsByEmail("nao-cadastrado@example.com")).isFalse();
+        assertThat(repository.findByEmail(email)).isPresent();
+        assertThat(repository.findByEmail("nao-cadastrado@example.com")).isEmpty();
+    }
 }
