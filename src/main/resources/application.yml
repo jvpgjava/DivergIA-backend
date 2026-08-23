@@ -49,6 +49,9 @@ divergia:
     auth:
       capacidade: 5
       janela-minutos: 1
+  extracao:
+    base-url: ${EXTRACAO_BASE_URL:http://localhost:8000}
+    timeout-segundos: ${EXTRACAO_TIMEOUT_SEGUNDOS:30}
 
 management:
   endpoints:

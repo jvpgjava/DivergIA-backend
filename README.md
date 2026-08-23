@@ -34,7 +34,7 @@ com.divergia
 
 Regra de dependência: `adapter → application → domain`, nunca o inverso.
 
-## O que já existe (Fases 0–3)
+## O que já existe (Fases 0–4)
 
 - Estrutura de pacotes hexagonal com `package-info.java` documentando cada pacote
 - Virtual threads habilitadas (`spring.threads.virtual.enabled=true`)
@@ -71,6 +71,13 @@ Regra de dependência: `adapter → application → domain`, nunca o inverso.
   `/api/auth/cadastro` — 5 tentativas/minuto por IP
 - Endpoints REST em `/api/auth/*`, já documentados automaticamente no
   Swagger (nenhum passo manual)
+- Microsserviço Python isolado (`extraction-service/`, FastAPI + Docling)
+  extraindo texto de documentos (PDF, DOCX, etc.) via `POST /extrair`, com
+  `GET /health` próprio — sem container, `venv` nativo
+- `ExtracaoDocumentoPort` (`application/port/out`) + adapter
+  (`adapter/out/extraction`) chamando o serviço Python via `RestClient`
+  com timeout configurável; nenhuma outra classe conhece o contrato HTTP
+  desse serviço
 
 ## Variáveis de ambiente adicionais (Fase 2)
 
@@ -93,6 +100,30 @@ Regra de dependência: `adapter → application → domain`, nunca o inverso.
 
 No perfil `prod`, `JWT_SECRET` é obrigatório (sem default) — igual às
 credenciais de banco.
+
+## Variáveis de ambiente adicionais (Fase 4)
+
+| Variável                    | Uso                                   | Default              |
+|------------------------------|------------------------------------------|-------------------------|
+| `EXTRACAO_BASE_URL`          | URL do microsserviço de extração          | `http://localhost:8000` |
+| `EXTRACAO_TIMEOUT_SEGUNDOS`  | Timeout de conexão/leitura da chamada HTTP | `30`                     |
+
+## Microsserviço de extração de documento
+
+Fica em [`extraction-service/`](extraction-service/) — Python (FastAPI +
+Docling), instruções completas de setup/execução no
+[README próprio](extraction-service/README.md). Resumo:
+
+```bash
+cd extraction-service
+python -m venv venv
+venv\Scripts\Activate.ps1   # Windows; Linux/macOS: source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --port 8000
+```
+
+O backend Java espera esse serviço em `http://localhost:8000` por padrão
+(`EXTRACAO_BASE_URL`).
 
 ## Pré-requisitos
 
