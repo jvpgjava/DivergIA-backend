@@ -14,7 +14,8 @@ public record TrechoDeriva(
         String trechoEditado,
         TipoDesvio tipoDesvio,
         String explicacao,
-        double intensidade) {
+        double intensidade,
+        boolean promovidoParaRag) {
 
     public TrechoDeriva {
         Objects.requireNonNull(id, "id não pode ser nulo");

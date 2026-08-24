@@ -57,6 +57,9 @@ divergia:
   extracao:
     base-url: ${EXTRACAO_BASE_URL:http://localhost:8000}
     timeout-segundos: ${EXTRACAO_TIMEOUT_SEGUNDOS:30}
+  promocao-rag:
+    # todo dia às 3h da manhã, por padrão
+    cron: ${PROMOCAO_RAG_CRON:0 0 3 * * *}
 
 management:
   endpoints:

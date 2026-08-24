@@ -34,7 +34,7 @@ com.divergia
 
 Regra de dependência: `adapter → application → domain`, nunca o inverso.
 
-## O que já existe (Fases 0–6)
+## O que já existe (Fases 0–7)
 
 - Estrutura de pacotes hexagonal com `package-info.java` documentando cada pacote
 - Virtual threads habilitadas (`spring.threads.virtual.enabled=true`)
@@ -91,6 +91,21 @@ Regra de dependência: `adapter → application → domain`, nunca o inverso.
   (autenticado) — reaproveita `LlmPort`/`VectorStorePort`, sem porta nova.
   Verifica que o trecho pertence a uma análise do próprio usuário (403 se
   não, 404 se o trecho não existir/não foi persistido)
+- **Histórico, tendência e privacidade (RF18–RF29)**: CRUD de histórico
+  (`GET/DELETE /api/historico`, `GET/DELETE /api/historico/{id}`), painel
+  de tendência pessoal (`GET /api/historico/tendencia` — totais,
+  distribuição por tipo de desvio, evolução mês a mês) e consentimento
+  (`GET/PUT /api/consentimento`)
+- **Consentimento com dois campos distintos**: `manterHistorico` (guardar
+  o próprio histórico) e `contribuirParaRag` (deixar trechos serem usados
+  como referência nas análises de QUALQUER usuário) — são decisões de
+  privacidade diferentes, cada uma com seu próprio opt-in
+- Job assíncrono (`@Scheduled`, cron configurável) que promove trechos de
+  deriva para a base RAG compartilhada — só quando o usuário consentiu
+  especificamente em `contribuirParaRag`; testado de ponta a ponta com
+  LLM/embedding reais, incluindo o caso negativo (usuário sem esse
+  consentimento não tem nada promovido, mas o trecho é marcado como
+  processado para não ser reavaliado todo dia)
 
 ## Variáveis de ambiente adicionais (Fase 2)
 
@@ -120,6 +135,12 @@ credenciais de banco.
 |------------------------------|------------------------------------------|-------------------------|
 | `EXTRACAO_BASE_URL`          | URL do microsserviço de extração          | `http://localhost:8000` |
 | `EXTRACAO_TIMEOUT_SEGUNDOS`  | Timeout de conexão/leitura da chamada HTTP | `30`                     |
+
+## Variáveis de ambiente adicionais (Fase 7)
+
+| Variável             | Uso                                              | Default                |
+|------------------------|-----------------------------------------------------|---------------------------|
+| `PROMOCAO_RAG_CRON`   | Cron do job de promoção de exemplos ao RAG           | `0 0 3 * * *` (3h da manhã) |
 
 ## Microsserviço de extração de documento
 

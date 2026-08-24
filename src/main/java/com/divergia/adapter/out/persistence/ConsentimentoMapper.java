@@ -12,6 +12,7 @@ public class ConsentimentoMapper {
                 entity.getId(),
                 entity.getUsuarioId(),
                 entity.isManterHistorico(),
+                entity.isContribuirParaRag(),
                 entity.getConcedidoEm());
     }
 
@@ -20,6 +21,7 @@ public class ConsentimentoMapper {
                 consentimento.id(),
                 consentimento.usuarioId(),
                 consentimento.manterHistorico(),
+                consentimento.contribuirParaRag(),
                 consentimento.concedidoEm());
     }
 }

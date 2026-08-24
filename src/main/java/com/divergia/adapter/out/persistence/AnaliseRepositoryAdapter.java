@@ -4,8 +4,10 @@ import com.divergia.application.port.out.AnaliseRepositoryPort;
 import com.divergia.domain.model.Analise;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class AnaliseRepositoryAdapter implements AnaliseRepositoryPort {
@@ -24,5 +26,22 @@ public class AnaliseRepositoryAdapter implements AnaliseRepositoryPort {
     @Override
     public Optional<Analise> buscarPorId(UUID id) {
         return repository.findById(id).map(AnaliseMapper::toDomain);
+    }
+
+    @Override
+    public List<Analise> buscarPorUsuarioId(UUID usuarioId) {
+        return repository.findByUsuarioId(usuarioId).stream()
+                .map(AnaliseMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void excluir(UUID id) {
+        repository.deleteById(id);
+    }
+
+    @Override
+    public void excluirTodasPorUsuarioId(UUID usuarioId) {
+        repository.deleteByUsuarioId(usuarioId);
     }
 }

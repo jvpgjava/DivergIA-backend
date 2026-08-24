@@ -62,4 +62,32 @@ class AnalisePersistenceTest {
         assertThat(encontrada.get().getTextoEditado()).isNull();
         assertThat(encontrada.get().isManterHistorico()).isFalse();
     }
+
+    @Test
+    void deveBuscarEExcluirTodasAsAnalisesPorUsuarioId() {
+        UsuarioJpaEntity usuario = entityManager.persistAndFlush(new UsuarioJpaEntity(
+                UUID.randomUUID(), "Usuário Teste", "analise-usuario+" + UUID.randomUUID() + "@example.com",
+                "hash-fake", Instant.now()));
+        UsuarioJpaEntity outroUsuario = entityManager.persistAndFlush(new UsuarioJpaEntity(
+                UUID.randomUUID(), "Outro Usuário", "outro+" + UUID.randomUUID() + "@example.com",
+                "hash-fake", Instant.now()));
+
+        entityManager.persistAndFlush(new AnaliseJpaEntity(
+                UUID.randomUUID(), usuario.getId(), "a", "b", true, Instant.now()));
+        entityManager.persistAndFlush(new AnaliseJpaEntity(
+                UUID.randomUUID(), usuario.getId(), "c", "d", true, Instant.now()));
+        entityManager.persistAndFlush(new AnaliseJpaEntity(
+                UUID.randomUUID(), outroUsuario.getId(), "e", "f", true, Instant.now()));
+        entityManager.clear();
+
+        assertThat(repository.findByUsuarioId(usuario.getId())).hasSize(2);
+        assertThat(repository.findByUsuarioId(outroUsuario.getId())).hasSize(1);
+
+        repository.deleteByUsuarioId(usuario.getId());
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(repository.findByUsuarioId(usuario.getId())).isEmpty();
+        assertThat(repository.findByUsuarioId(outroUsuario.getId())).hasSize(1);
+    }
 }

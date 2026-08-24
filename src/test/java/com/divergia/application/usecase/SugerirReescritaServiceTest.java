@@ -57,7 +57,7 @@ class SugerirReescritaServiceTest {
 
         TrechoDeriva trecho = new TrechoDeriva(
                 trechoId, analiseId, "o prazo é de dois anos", "o prazo é rápido",
-                TipoDesvio.SENTIDO, "prazo específico virou vago", 0.8);
+                TipoDesvio.SENTIDO, "prazo específico virou vago", 0.8, false);
         Analise analise = new Analise(analiseId, usuarioId, "original", "editado", true, Instant.now());
 
         given(trechoDerivaRepository.buscarPorId(trechoId)).willReturn(Optional.of(trecho));
@@ -90,7 +90,7 @@ class SugerirReescritaServiceTest {
         UUID analiseId = UUID.randomUUID();
 
         TrechoDeriva trecho = new TrechoDeriva(
-                trechoId, analiseId, "original", "editado", TipoDesvio.POSICAO, "explicacao", 0.5);
+                trechoId, analiseId, "original", "editado", TipoDesvio.POSICAO, "explicacao", 0.5, false);
         Analise analiseDeOutroUsuario = new Analise(
                 analiseId, outroUsuarioId, "original", "editado", true, Instant.now());
 

@@ -13,4 +13,10 @@ public interface TrechoDerivaRepositoryPort {
     Optional<TrechoDeriva> buscarPorId(UUID id);
 
     List<TrechoDeriva> buscarPorAnaliseId(UUID analiseId);
+
+    List<TrechoDeriva> buscarPorUsuarioId(UUID usuarioId);
+
+    List<TrechoDeriva> buscarNaoPromovidosParaRag();
+
+    void marcarComoPromovidoParaRag(UUID id);
 }

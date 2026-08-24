@@ -21,16 +21,21 @@ public class ConsentimentoJpaEntity {
     @Column(name = "manter_historico", nullable = false)
     private boolean manterHistorico;
 
+    @Column(name = "contribuir_para_rag", nullable = false)
+    private boolean contribuirParaRag;
+
     @Column(name = "concedido_em", nullable = false)
     private Instant concedidoEm;
 
     protected ConsentimentoJpaEntity() {
     }
 
-    public ConsentimentoJpaEntity(UUID id, UUID usuarioId, boolean manterHistorico, Instant concedidoEm) {
+    public ConsentimentoJpaEntity(
+            UUID id, UUID usuarioId, boolean manterHistorico, boolean contribuirParaRag, Instant concedidoEm) {
         this.id = id;
         this.usuarioId = usuarioId;
         this.manterHistorico = manterHistorico;
+        this.contribuirParaRag = contribuirParaRag;
         this.concedidoEm = concedidoEm;
     }
 
@@ -44,6 +49,10 @@ public class ConsentimentoJpaEntity {
 
     public boolean isManterHistorico() {
         return manterHistorico;
+    }
+
+    public boolean isContribuirParaRag() {
+        return contribuirParaRag;
     }
 
     public Instant getConcedidoEm() {

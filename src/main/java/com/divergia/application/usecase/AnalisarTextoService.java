@@ -74,7 +74,8 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
                     avaliacao.trechoEditado(),
                     avaliacao.tipoDesvio(),
                     avaliacao.explicacao(),
-                    avaliacao.intensidade());
+                    avaliacao.intensidade(),
+                    false);
             // Os trechos citam texto bruto (original/editado) — mesma regra de
             // retenção da Analise: só persiste se houve consentimento. Ainda
             // assim aparecem no resultado devolvido nesta chamada.
