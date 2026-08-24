@@ -34,7 +34,7 @@ com.divergia
 
 Regra de dependência: `adapter → application → domain`, nunca o inverso.
 
-## O que já existe (Fases 0–4)
+## O que já existe (Fases 0–5)
 
 - Estrutura de pacotes hexagonal com `package-info.java` documentando cada pacote
 - Virtual threads habilitadas (`spring.threads.virtual.enabled=true`)
@@ -78,6 +78,15 @@ Regra de dependência: `adapter → application → domain`, nunca o inverso.
   (`adapter/out/extraction`) chamando o serviço Python via `RestClient`
   com timeout configurável; nenhuma outra classe conhece o contrato HTTP
   desse serviço
+- **Análise comparativa (RF06–RF15)**: `POST /api/analises` (autenticado),
+  aceitando texto colado OU upload de arquivo independentemente para cada
+  lado (original/editado) — validação → extração (se arquivo) → busca de
+  exemplos via RAG → avaliação pelo LLM → persistência. Regra de retenção
+  aplicada de fato: sem consentimento, nem o texto da análise nem os
+  trechos de deriva (que também citam texto bruto) são persistidos — mas
+  o resultado é sempre devolvido na resposta
+- Rate limiting também em `/api/analises` (10/min por IP — cada chamada
+  tem custo real de LLM), reaproveitando o mesmo filtro da Fase 3
 
 ## Variáveis de ambiente adicionais (Fase 2)
 

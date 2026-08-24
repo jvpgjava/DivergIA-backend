@@ -12,48 +12,61 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Rate limiting em memória (por IP) para login e cadastro — alvo natural de
- * força bruta e abuso. Em memória porque a infraestrutura deste projeto é
- * uma única instância de VPS, sem Redis/cache distribuído.
+ * Rate limiting em memória (por IP) para login/cadastro (alvo natural de
+ * força bruta) e para o endpoint de análise (cada chamada tem custo real de
+ * LLM). Em memória porque a infraestrutura deste projeto é uma única
+ * instância de VPS, sem Redis/cache distribuído.
  */
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
 
-    private static final Set<String> ROTAS_LIMITADAS = Set.of("/api/auth/login", "/api/auth/cadastro");
+    private record Regra(String metodo, String caminho, int capacidade, Duration janela) {
 
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
-    private final int capacidade;
-    private final Duration janela;
+        boolean combinaCom(HttpServletRequest request) {
+            return metodo.equalsIgnoreCase(request.getMethod()) && caminho.equals(request.getRequestURI());
+        }
+    }
+
+    private final List<Regra> regras;
+    private final Map<Regra, Map<String, Bucket>> bucketsPorRegra = new ConcurrentHashMap<>();
 
     public RateLimitingFilter(
-            @Value("${divergia.rate-limit.auth.capacidade:5}") int capacidade,
-            @Value("${divergia.rate-limit.auth.janela-minutos:1}") long janelaMinutos) {
-        this.capacidade = capacidade;
-        this.janela = Duration.ofMinutes(janelaMinutos);
+            @Value("${divergia.rate-limit.auth.capacidade:5}") int authCapacidade,
+            @Value("${divergia.rate-limit.auth.janela-minutos:1}") long authJanelaMinutos,
+            @Value("${divergia.rate-limit.analise.capacidade:10}") int analiseCapacidade,
+            @Value("${divergia.rate-limit.analise.janela-minutos:1}") long analiseJanelaMinutos) {
+        this.regras = List.of(
+                new Regra("POST", "/api/auth/login", authCapacidade, Duration.ofMinutes(authJanelaMinutos)),
+                new Regra("POST", "/api/auth/cadastro", authCapacidade, Duration.ofMinutes(authJanelaMinutos)),
+                new Regra("POST", "/api/analises", analiseCapacidade, Duration.ofMinutes(analiseJanelaMinutos)));
     }
 
     @Override
     protected void doFilterInternal(
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        if ("POST".equalsIgnoreCase(request.getMethod()) && ROTAS_LIMITADAS.contains(request.getRequestURI())) {
-            Bucket bucket = buckets.computeIfAbsent(request.getRemoteAddr(), ip -> criarBucket());
-            if (!bucket.tryConsume(1)) {
-                response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-                return;
+        for (Regra regra : regras) {
+            if (regra.combinaCom(request)) {
+                Map<String, Bucket> buckets = bucketsPorRegra.computeIfAbsent(regra, r -> new ConcurrentHashMap<>());
+                Bucket bucket = buckets.computeIfAbsent(request.getRemoteAddr(), ip -> criarBucket(regra));
+                if (!bucket.tryConsume(1)) {
+                    response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+                    return;
+                }
+                break;
             }
         }
         filterChain.doFilter(request, response);
     }
 
-    private Bucket criarBucket() {
+    private Bucket criarBucket(Regra regra) {
         return Bucket.builder()
-                .addLimit(limite -> limite.capacity(capacidade).refillGreedy(capacidade, janela))
+                .addLimit(limite -> limite.capacity(regra.capacidade()).refillGreedy(regra.capacidade(), regra.janela()))
                 .build();
     }
 }
