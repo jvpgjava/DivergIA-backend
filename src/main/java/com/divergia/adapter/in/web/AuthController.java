@@ -12,15 +12,11 @@ import com.divergia.application.port.in.EncerrarSessaoUseCase;
 import com.divergia.application.port.in.ExcluirContaUseCase;
 import com.divergia.application.port.in.RedefinirSenhaUseCase;
 import com.divergia.application.port.in.SolicitarRecuperacaoSenhaUseCase;
-import com.divergia.application.usecase.CredenciaisInvalidasException;
-import com.divergia.application.usecase.EmailJaCadastradoException;
-import com.divergia.application.usecase.TokenInvalidoOuExpiradoException;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -32,6 +28,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Autenticação", description = "Cadastro, login, logout, recuperação de senha e exclusão de conta")
 public class AuthController {
 
     private final CadastrarUsuarioUseCase cadastrarUsuario;
@@ -95,25 +92,5 @@ public class AuthController {
             throw new IllegalArgumentException("Cabeçalho Authorization ausente ou mal formado");
         }
         return cabecalhoAutorizacao.substring("Bearer ".length());
-    }
-
-    @ExceptionHandler(EmailJaCadastradoException.class)
-    public ResponseEntity<String> tratarEmailJaCadastrado(EmailJaCadastradoException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-    }
-
-    @ExceptionHandler(CredenciaisInvalidasException.class)
-    public ResponseEntity<String> tratarCredenciaisInvalidas(CredenciaisInvalidasException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-    }
-
-    @ExceptionHandler(TokenInvalidoOuExpiradoException.class)
-    public ResponseEntity<String> tratarTokenInvalido(TokenInvalidoOuExpiradoException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> tratarArgumentoInvalido(IllegalArgumentException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
     }
 }

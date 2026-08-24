@@ -6,14 +6,10 @@ import com.divergia.application.port.in.AnalisarTextoUseCase;
 import com.divergia.application.port.in.EntradaAnalise;
 import com.divergia.application.port.in.EntradaTexto;
 import com.divergia.application.port.in.SugerirReescritaUseCase;
-import com.divergia.application.port.out.ExtracaoDocumentoException;
-import com.divergia.application.usecase.AcessoNaoAutorizadoException;
-import com.divergia.application.usecase.TrechoDerivaNaoEncontradoException;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/analises")
+@Tag(name = "Análise", description = "Análise comparativa de textos e sugestão de reescrita fiel")
 public class AnaliseController {
 
     private final AnalisarTextoUseCase analisarTexto;
@@ -70,30 +67,5 @@ public class AnaliseController {
         } catch (IOException e) {
             throw new UncheckedIOException("Não foi possível ler o arquivo enviado: " + arquivo.getOriginalFilename(), e);
         }
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> tratarEntradaInvalida(IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(ExtracaoDocumentoException.class)
-    public ResponseEntity<String> tratarFalhaDeExtracao(ExtracaoDocumentoException e) {
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(e.getMessage());
-    }
-
-    @ExceptionHandler(UncheckedIOException.class)
-    public ResponseEntity<String> tratarFalhaDeLeituraDeArquivo(UncheckedIOException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(TrechoDerivaNaoEncontradoException.class)
-    public ResponseEntity<String> tratarTrechoNaoEncontrado(TrechoDerivaNaoEncontradoException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-    }
-
-    @ExceptionHandler(AcessoNaoAutorizadoException.class)
-    public ResponseEntity<String> tratarAcessoNaoAutorizado(AcessoNaoAutorizadoException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
     }
 }

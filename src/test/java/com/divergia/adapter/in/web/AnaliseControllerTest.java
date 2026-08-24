@@ -29,6 +29,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -143,6 +144,26 @@ class AnaliseControllerTest {
                         .param("textoEditado", "editado")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void erroInesperadoDeveVirar500PadronizadoSemVazarDetalheInterno() throws Exception {
+        String token = cadastrarELogar("erro-inesperado+" + UUID.randomUUID() + "@example.com");
+
+        given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
+        given(llmPort.avaliarDerivas(anyString(), anyString(), any()))
+                .willThrow(new RuntimeException("detalhe interno sensível que não deve aparecer na resposta"));
+
+        mockMvc.perform(multipart("/api/analises")
+                        .param("textoOriginal", "original")
+                        .param("textoEditado", "editado")
+                        .param("manterHistorico", "true")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.message").value("Erro interno inesperado"))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("detalhe interno sensível"))));
     }
 
     @Test

@@ -40,4 +40,6 @@ application-local.yaml
 application-local.properties
 *.pem
 *.key
+/logs/
+*.log
 

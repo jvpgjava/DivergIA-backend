@@ -34,7 +34,7 @@ com.divergia
 
 Regra de dependência: `adapter → application → domain`, nunca o inverso.
 
-## O que já existe (Fases 0–7)
+## O que já existe (Fases 0–8)
 
 - Estrutura de pacotes hexagonal com `package-info.java` documentando cada pacote
 - Virtual threads habilitadas (`spring.threads.virtual.enabled=true`)
@@ -106,6 +106,17 @@ Regra de dependência: `adapter → application → domain`, nunca o inverso.
   LLM/embedding reais, incluindo o caso negativo (usuário sem esse
   consentimento não tem nada promovido, mas o trecho é marcado como
   processado para não ser reavaliado todo dia)
+- **Observabilidade**: `@RestControllerAdvice` único (`GlobalExceptionHandler`)
+  padronizando todo erro da API num shape só (`timestamp/status/error/message/path`)
+  — inclusive erros de validação (`@Valid`) e um handler genérico que nunca
+  vaza stack trace/detalhe interno ao cliente
+- Logs estruturados com rotação (`logback-spring.xml`): console em
+  `dev`/`test`, console + arquivo com rotação diária/por tamanho (10MB,
+  30 dias, cap de 1GB) em `prod`. Auditoria confirmou: nenhum log
+  referencia texto bruto de análise (corrigido um vazamento em
+  `AbacusLlmAdapter` que embutia a resposta crua do LLM na mensagem de erro)
+- Swagger com esquema de autenticação Bearer JWT configurado (botão
+  "Authorize" funcional) e tags por controller
 
 ## Variáveis de ambiente adicionais (Fase 2)
 

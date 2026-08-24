@@ -4,6 +4,7 @@ import com.divergia.adapter.in.web.dto.ConsentimentoRequest;
 import com.divergia.adapter.in.web.dto.ConsentimentoResponse;
 import com.divergia.application.port.in.AtualizarConsentimentoUseCase;
 import com.divergia.application.port.in.ObterConsentimentoUseCase;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,6 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/consentimento")
+@Tag(name = "Consentimento", description = "Preferências de privacidade: manter histórico e contribuir para o RAG")
 public class ConsentimentoController {
 
     private final ObterConsentimentoUseCase obterConsentimento;

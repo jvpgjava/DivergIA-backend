@@ -8,14 +8,11 @@ import com.divergia.application.port.in.ExcluirAnaliseUseCase;
 import com.divergia.application.port.in.ExcluirHistoricoUseCase;
 import com.divergia.application.port.in.ListarHistoricoUseCase;
 import com.divergia.application.port.in.ObterPainelTendenciaUseCase;
-import com.divergia.application.usecase.AcessoNaoAutorizadoException;
-import com.divergia.application.usecase.AnaliseNaoEncontradaException;
 import com.divergia.domain.model.ResultadoAnalise;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +24,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/historico")
+@Tag(name = "Histórico", description = "Histórico de análises, painel de tendência e exclusão de dados")
 public class HistoricoController {
 
     private final ListarHistoricoUseCase listarHistorico;
@@ -74,15 +72,5 @@ public class HistoricoController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void excluirTudo(@AuthenticationPrincipal UUID usuarioId) {
         excluirHistorico.excluirTudo(usuarioId);
-    }
-
-    @ExceptionHandler(AnaliseNaoEncontradaException.class)
-    public ResponseEntity<String> tratarAnaliseNaoEncontrada(AnaliseNaoEncontradaException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-    }
-
-    @ExceptionHandler(AcessoNaoAutorizadoException.class)
-    public ResponseEntity<String> tratarAcessoNaoAutorizado(AcessoNaoAutorizadoException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
     }
 }

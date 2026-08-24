@@ -1,5 +1,6 @@
 package com.divergia.adapter.out.llm;
 
+import com.divergia.application.port.out.LlmException;
 import com.divergia.application.port.out.LlmPort;
 import com.divergia.domain.model.AvaliacaoDeDeriva;
 import com.divergia.domain.model.ExemploRag;
@@ -57,8 +58,9 @@ public class AbacusLlmAdapter implements LlmPort {
             derivas = objectMapper.readValue(
                     json, objectMapper.getTypeFactory().constructCollectionType(List.class, DerivaJson.class));
         } catch (Exception e) {
-            throw new IllegalStateException("Resposta do LLM não pôde ser interpretada como JSON de derivas: "
-                    + resposta, e);
+            throw new LlmException(
+                    "Resposta do LLM não pôde ser interpretada como JSON de derivas (tamanho: "
+                            + resposta.length() + " caracteres)", e);
         }
 
         List<AvaliacaoDeDeriva> resultado = new ArrayList<>();
@@ -77,7 +79,8 @@ public class AbacusLlmAdapter implements LlmPort {
         int inicio = resposta.indexOf('[');
         int fim = resposta.lastIndexOf(']');
         if (inicio == -1 || fim == -1 || fim < inicio) {
-            throw new IllegalStateException("Resposta do LLM não contém um array JSON: " + resposta);
+            throw new LlmException(
+                    "Resposta do LLM não contém um array JSON (tamanho: " + resposta.length() + " caracteres)");
         }
         return resposta.substring(inicio, fim + 1);
     }
