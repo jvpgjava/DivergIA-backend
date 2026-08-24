@@ -145,6 +145,72 @@ class AnaliseControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void deveSugerirReescritaParaTrechoDaPropriaAnalise() throws Exception {
+        String token = cadastrarELogar("sugestao-reescrita+" + UUID.randomUUID() + "@example.com");
+
+        given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
+        given(llmPort.avaliarDerivas(eq("o prazo é de dois anos"), eq("o prazo é rápido"), any()))
+                .willReturn(List.of(new AvaliacaoDeDeriva(
+                        TipoDesvio.SENTIDO, "o prazo é de dois anos", "o prazo é rápido",
+                        "prazo específico virou vago", 0.8)));
+
+        String corpoAnalise = mockMvc.perform(multipart("/api/analises")
+                        .param("textoOriginal", "o prazo é de dois anos")
+                        .param("textoEditado", "o prazo é rápido")
+                        .param("manterHistorico", "true")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String trechoId = objectMapper.readTree(corpoAnalise).get("trechos").get(0).get("id").asText();
+
+        given(llmPort.sugerirReescrita(
+                eq("o prazo é de dois anos"), eq("o prazo é rápido"), eq(TipoDesvio.SENTIDO), anyString(), any()))
+                .willReturn("o prazo é de dois anos, mas pode ser antecipado");
+
+        mockMvc.perform(post("/api/analises/trechos/" + trechoId + "/sugestao-reescrita")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sugestao").value("o prazo é de dois anos, mas pode ser antecipado"));
+    }
+
+    @Test
+    void deveRejeitarSugestaoDeReescritaParaTrechoDeOutroUsuario() throws Exception {
+        String tokenDono = cadastrarELogar("dono-trecho+" + UUID.randomUUID() + "@example.com");
+        String tokenIntruso = cadastrarELogar("intruso+" + UUID.randomUUID() + "@example.com");
+
+        given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
+        given(llmPort.avaliarDerivas(anyString(), anyString(), any()))
+                .willReturn(List.of(new AvaliacaoDeDeriva(
+                        TipoDesvio.INTENSIDADE, "original", "editado", "explicacao", 0.5)));
+
+        String corpoAnalise = mockMvc.perform(multipart("/api/analises")
+                        .param("textoOriginal", "original")
+                        .param("textoEditado", "editado")
+                        .param("manterHistorico", "true")
+                        .header("Authorization", "Bearer " + tokenDono))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String trechoId = objectMapper.readTree(corpoAnalise).get("trechos").get(0).get("id").asText();
+
+        mockMvc.perform(post("/api/analises/trechos/" + trechoId + "/sugestao-reescrita")
+                        .header("Authorization", "Bearer " + tokenIntruso))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deveRetornar404ParaTrechoInexistente() throws Exception {
+        String token = cadastrarELogar("trecho-inexistente+" + UUID.randomUUID() + "@example.com");
+
+        mockMvc.perform(post("/api/analises/trechos/" + UUID.randomUUID() + "/sugestao-reescrita")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+    }
+
     private record CadastroBody(String nome, String email, String senha) {
     }
 

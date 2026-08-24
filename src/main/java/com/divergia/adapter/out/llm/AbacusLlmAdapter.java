@@ -29,6 +29,27 @@ public class AbacusLlmAdapter implements LlmPort {
         return parsear(resposta);
     }
 
+    @Override
+    public String sugerirReescrita(
+            String trechoOriginal,
+            String trechoEditado,
+            TipoDesvio tipoDesvio,
+            String explicacao,
+            List<ExemploRag> exemplosRelevantes) {
+        String prompt = PromptSugestaoReescrita.montar(
+                trechoOriginal, trechoEditado, tipoDesvio, explicacao, exemplosRelevantes);
+        String resposta = chatModel.chat(prompt);
+        return limpar(resposta);
+    }
+
+    private String limpar(String resposta) {
+        String limpa = resposta.trim();
+        if (limpa.length() >= 2 && limpa.startsWith("\"") && limpa.endsWith("\"")) {
+            limpa = limpa.substring(1, limpa.length() - 1);
+        }
+        return limpa.trim();
+    }
+
     private List<AvaliacaoDeDeriva> parsear(String resposta) {
         String json = extrairArrayJson(resposta);
         List<DerivaJson> derivas;

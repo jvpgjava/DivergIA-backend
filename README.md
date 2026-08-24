@@ -34,7 +34,7 @@ com.divergia
 
 Regra de dependência: `adapter → application → domain`, nunca o inverso.
 
-## O que já existe (Fases 0–5)
+## O que já existe (Fases 0–6)
 
 - Estrutura de pacotes hexagonal com `package-info.java` documentando cada pacote
 - Virtual threads habilitadas (`spring.threads.virtual.enabled=true`)
@@ -87,6 +87,10 @@ Regra de dependência: `adapter → application → domain`, nunca o inverso.
   o resultado é sempre devolvido na resposta
 - Rate limiting também em `/api/analises` (10/min por IP — cada chamada
   tem custo real de LLM), reaproveitando o mesmo filtro da Fase 3
+- **Sugestão de reescrita fiel (RF16–RF17)**: `POST /api/analises/trechos/{trechoId}/sugestao-reescrita`
+  (autenticado) — reaproveita `LlmPort`/`VectorStorePort`, sem porta nova.
+  Verifica que o trecho pertence a uma análise do próprio usuário (403 se
+  não, 404 se o trecho não existir/não foi persistido)
 
 ## Variáveis de ambiente adicionais (Fase 2)
 

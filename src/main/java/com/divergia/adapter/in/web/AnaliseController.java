@@ -1,15 +1,20 @@
 package com.divergia.adapter.in.web;
 
 import com.divergia.adapter.in.web.dto.ResultadoAnaliseResponse;
+import com.divergia.adapter.in.web.dto.SugestaoReescritaResponse;
 import com.divergia.application.port.in.AnalisarTextoUseCase;
 import com.divergia.application.port.in.EntradaAnalise;
 import com.divergia.application.port.in.EntradaTexto;
+import com.divergia.application.port.in.SugerirReescritaUseCase;
 import com.divergia.application.port.out.ExtracaoDocumentoException;
+import com.divergia.application.usecase.AcessoNaoAutorizadoException;
+import com.divergia.application.usecase.TrechoDerivaNaoEncontradoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,9 +31,11 @@ import java.util.UUID;
 public class AnaliseController {
 
     private final AnalisarTextoUseCase analisarTexto;
+    private final SugerirReescritaUseCase sugerirReescrita;
 
-    public AnaliseController(AnalisarTextoUseCase analisarTexto) {
+    public AnaliseController(AnalisarTextoUseCase analisarTexto, SugerirReescritaUseCase sugerirReescrita) {
         this.analisarTexto = analisarTexto;
+        this.sugerirReescrita = sugerirReescrita;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -46,6 +53,12 @@ public class AnaliseController {
 
         return ResultadoAnaliseResponse.from(
                 analisarTexto.analisar(new EntradaAnalise(usuarioId, original, editado, manterHistorico)));
+    }
+
+    @PostMapping("/trechos/{trechoId}/sugestao-reescrita")
+    public SugestaoReescritaResponse sugerirReescrita(
+            @AuthenticationPrincipal UUID usuarioId, @PathVariable UUID trechoId) {
+        return new SugestaoReescritaResponse(sugerirReescrita.sugerir(usuarioId, trechoId));
     }
 
     private EntradaTexto paraEntradaTexto(String texto, MultipartFile arquivo) {
@@ -72,5 +85,15 @@ public class AnaliseController {
     @ExceptionHandler(UncheckedIOException.class)
     public ResponseEntity<String> tratarFalhaDeLeituraDeArquivo(UncheckedIOException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    @ExceptionHandler(TrechoDerivaNaoEncontradoException.class)
+    public ResponseEntity<String> tratarTrechoNaoEncontrado(TrechoDerivaNaoEncontradoException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(AcessoNaoAutorizadoException.class)
+    public ResponseEntity<String> tratarAcessoNaoAutorizado(AcessoNaoAutorizadoException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
     }
 }

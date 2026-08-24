@@ -5,6 +5,7 @@ import com.divergia.domain.model.TrechoDeriva;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,11 @@ public class TrechoDerivaRepositoryAdapter implements TrechoDerivaRepositoryPort
     @Override
     public TrechoDeriva salvar(TrechoDeriva trecho) {
         return TrechoDerivaMapper.toDomain(repository.save(TrechoDerivaMapper.toEntity(trecho)));
+    }
+
+    @Override
+    public Optional<TrechoDeriva> buscarPorId(UUID id) {
+        return repository.findById(id).map(TrechoDerivaMapper::toDomain);
     }
 
     @Override
