@@ -1,3 +1,6 @@
+server:
+  port: ${SERVER_PORT:8080}
+
 spring:
   application:
     name: divergia-backend
@@ -74,69 +77,3 @@ management:
   health:
     mail:
       enabled: false
-
----
-spring:
-  config:
-    activate:
-      on-profile: dev
-management:
-  endpoint:
-    health:
-      show-details: always
-
----
-spring:
-  config:
-    activate:
-      on-profile: test
-  datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/divergia_test}
-    username: ${DB_USERNAME:divergia}
-    password: ${DB_PASSWORD:divergia}
-    hikari:
-      # cada configuração distinta de @SpringBootTest cria um contexto (e um
-      # pool) próprio no cache do Spring; com vários contextos na suíte, o
-      # default de 10 conexões por pool estoura o max_connections do Postgres.
-      maximum-pool-size: 3
-      minimum-idle: 1
-
-divergia:
-  rate-limit:
-    # bem mais alto que o default para não interferir em testes que chamam
-    # /login, /cadastro ou /analises várias vezes; o rate limit em si é
-    # validado em testes dedicados que sobrescrevem esses valores.
-    auth:
-      capacidade: 1000
-    analise:
-      capacidade: 1000
-
-management:
-  endpoint:
-    health:
-      show-details: always
-
----
-spring:
-  config:
-    activate:
-      on-profile: prod
-  datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-  jpa:
-    hibernate:
-      ddl-auto: validate
-  mail:
-    username: ${GMAIL_USERNAME}
-    password: ${GMAIL_APP_PASSWORD}
-
-divergia:
-  jwt:
-    secret: ${JWT_SECRET}
-
-management:
-  endpoint:
-    health:
-      show-details: never
