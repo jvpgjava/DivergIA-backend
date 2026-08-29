@@ -9,6 +9,7 @@ import com.divergia.application.usecase.CredenciaisInvalidasException;
 import com.divergia.application.usecase.EmailJaCadastradoException;
 import com.divergia.application.usecase.TokenInvalidoOuExpiradoException;
 import com.divergia.application.usecase.TrechoDerivaNaoEncontradoException;
+import com.divergia.application.usecase.UsuarioNaoEncontradoException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TrechoDerivaNaoEncontradoException.class)
     public ResponseEntity<ErroResponse> tratarTrechoNaoEncontrado(
             TrechoDerivaNaoEncontradoException e, HttpServletRequest request) {
+        return responder(HttpStatus.NOT_FOUND, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(UsuarioNaoEncontradoException.class)
+    public ResponseEntity<ErroResponse> tratarUsuarioNaoEncontrado(
+            UsuarioNaoEncontradoException e, HttpServletRequest request) {
         return responder(HttpStatus.NOT_FOUND, e.getMessage(), request);
     }
 

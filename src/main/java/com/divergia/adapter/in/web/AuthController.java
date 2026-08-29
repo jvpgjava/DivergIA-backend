@@ -10,6 +10,7 @@ import com.divergia.application.port.in.AutenticarUsuarioUseCase;
 import com.divergia.application.port.in.CadastrarUsuarioUseCase;
 import com.divergia.application.port.in.EncerrarSessaoUseCase;
 import com.divergia.application.port.in.ExcluirContaUseCase;
+import com.divergia.application.port.in.ObterUsuarioLogadoUseCase;
 import com.divergia.application.port.in.RedefinirSenhaUseCase;
 import com.divergia.application.port.in.SolicitarRecuperacaoSenhaUseCase;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +18,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -37,6 +39,7 @@ public class AuthController {
     private final SolicitarRecuperacaoSenhaUseCase solicitarRecuperacaoSenha;
     private final RedefinirSenhaUseCase redefinirSenha;
     private final ExcluirContaUseCase excluirConta;
+    private final ObterUsuarioLogadoUseCase obterUsuarioLogado;
 
     public AuthController(
             CadastrarUsuarioUseCase cadastrarUsuario,
@@ -44,13 +47,15 @@ public class AuthController {
             EncerrarSessaoUseCase encerrarSessao,
             SolicitarRecuperacaoSenhaUseCase solicitarRecuperacaoSenha,
             RedefinirSenhaUseCase redefinirSenha,
-            ExcluirContaUseCase excluirConta) {
+            ExcluirContaUseCase excluirConta,
+            ObterUsuarioLogadoUseCase obterUsuarioLogado) {
         this.cadastrarUsuario = cadastrarUsuario;
         this.autenticarUsuario = autenticarUsuario;
         this.encerrarSessao = encerrarSessao;
         this.solicitarRecuperacaoSenha = solicitarRecuperacaoSenha;
         this.redefinirSenha = redefinirSenha;
         this.excluirConta = excluirConta;
+        this.obterUsuarioLogado = obterUsuarioLogado;
     }
 
     @PostMapping("/cadastro")
@@ -79,6 +84,11 @@ public class AuthController {
     @PostMapping("/redefinir-senha")
     public void redefinirSenha(@Valid @RequestBody RedefinirSenhaRequest request) {
         redefinirSenha.redefinir(request.token(), request.novaSenha());
+    }
+
+    @GetMapping("/me")
+    public UsuarioResponse me(@AuthenticationPrincipal UUID usuarioId) {
+        return UsuarioResponse.from(obterUsuarioLogado.obter(usuarioId));
     }
 
     @DeleteMapping("/conta")

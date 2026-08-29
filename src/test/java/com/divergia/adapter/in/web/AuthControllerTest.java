@@ -20,6 +20,7 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.then;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -96,6 +97,29 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new LoginBody(email, "senha-errada"))))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void meDeveDevolverNomeEEmailDoUsuarioDoToken() throws Exception {
+        String email = emailUnico("meu-perfil");
+        cadastrar("Ana Clara", email, "senha12345");
+        String token = login(email, "senha12345");
+
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nome").value("Ana Clara"))
+                .andExpect(jsonPath("$.email").value(email));
+    }
+
+    @Test
+    void meDeveRejeitarAcessoSemToken() throws Exception {
+        mockMvc.perform(get("/api/auth/me"))
+                .andExpect(result -> {
+                    int sc = result.getResponse().getStatus();
+                    if (sc != 401 && sc != 403) {
+                        throw new AssertionError("Esperado 401 ou 403, recebido " + sc);
+                    }
+                });
     }
 
     @Test
