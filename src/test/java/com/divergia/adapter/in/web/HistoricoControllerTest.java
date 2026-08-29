@@ -106,6 +106,13 @@ class HistoricoControllerTest {
                 .getContentAsString();
         JsonNode lista = objectMapper.readTree(corpoLista);
         assertThat(lista).hasSize(2);
+        // mais recente primeiro (analiseId2, intensidade 0.6 -> 60 pts, INTENSIDADE)
+        assertThat(lista.get(0).get("id").asText()).isEqualTo(analiseId2);
+        assertThat(lista.get(0).get("pontuacaoIntensidade").asInt()).isEqualTo(60);
+        assertThat(lista.get(0).get("tipoDesvioPrincipal").asText()).isEqualTo("INTENSIDADE");
+        assertThat(lista.get(0).get("textoPreview").asText()).isEqualTo("o produto é bom");
+        assertThat(lista.get(1).get("pontuacaoIntensidade").asInt()).isEqualTo(80);
+        assertThat(lista.get(1).get("tipoDesvioPrincipal").asText()).isEqualTo("SENTIDO");
 
         // 2) detalhe de uma análise específica
         mockMvc.perform(get("/api/historico/" + analiseId1).header("Authorization", "Bearer " + token))
