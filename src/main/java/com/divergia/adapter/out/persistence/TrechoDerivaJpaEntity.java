@@ -39,6 +39,9 @@ public class TrechoDerivaJpaEntity {
     @Column(name = "promovido_para_rag", nullable = false)
     private boolean promovidoParaRag;
 
+    @Column(name = "sugestao_aceita", columnDefinition = "TEXT")
+    private String sugestaoAceita;
+
     protected TrechoDerivaJpaEntity() {
     }
 
@@ -50,7 +53,8 @@ public class TrechoDerivaJpaEntity {
             TipoDesvio tipoDesvio,
             String explicacao,
             double intensidade,
-            boolean promovidoParaRag) {
+            boolean promovidoParaRag,
+            String sugestaoAceita) {
         this.id = id;
         this.analiseId = analiseId;
         this.trechoOriginal = trechoOriginal;
@@ -59,6 +63,7 @@ public class TrechoDerivaJpaEntity {
         this.explicacao = explicacao;
         this.intensidade = intensidade;
         this.promovidoParaRag = promovidoParaRag;
+        this.sugestaoAceita = sugestaoAceita;
     }
 
     public UUID getId() {
@@ -91,5 +96,9 @@ public class TrechoDerivaJpaEntity {
 
     public boolean isPromovidoParaRag() {
         return promovidoParaRag;
+    }
+
+    public String getSugestaoAceita() {
+        return sugestaoAceita;
     }
 }

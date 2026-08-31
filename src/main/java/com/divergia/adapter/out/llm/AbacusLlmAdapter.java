@@ -31,7 +31,7 @@ public class AbacusLlmAdapter implements LlmPort {
     }
 
     @Override
-    public String sugerirReescrita(
+    public List<String> sugerirReescrita(
             String trechoOriginal,
             String trechoEditado,
             TipoDesvio tipoDesvio,
@@ -40,15 +40,19 @@ public class AbacusLlmAdapter implements LlmPort {
         String prompt = PromptSugestaoReescrita.montar(
                 trechoOriginal, trechoEditado, tipoDesvio, explicacao, exemplosRelevantes);
         String resposta = chatModel.chat(prompt);
-        return limpar(resposta);
+        return parsearSugestoes(resposta);
     }
 
-    private String limpar(String resposta) {
-        String limpa = resposta.trim();
-        if (limpa.length() >= 2 && limpa.startsWith("\"") && limpa.endsWith("\"")) {
-            limpa = limpa.substring(1, limpa.length() - 1);
+    private List<String> parsearSugestoes(String resposta) {
+        String json = extrairArrayJson(resposta);
+        try {
+            return objectMapper.readValue(
+                    json, objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+        } catch (Exception e) {
+            throw new LlmException(
+                    "Resposta do LLM não pôde ser interpretada como JSON de sugestões (tamanho: "
+                            + resposta.length() + " caracteres)", e);
         }
-        return limpa.trim();
     }
 
     private List<AvaliacaoDeDeriva> parsear(String resposta) {

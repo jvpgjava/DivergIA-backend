@@ -1,17 +1,22 @@
 package com.divergia.adapter.in.web;
 
+import com.divergia.adapter.in.web.dto.AceitarSugestaoRequest;
 import com.divergia.adapter.in.web.dto.ResultadoAnaliseResponse;
 import com.divergia.adapter.in.web.dto.SugestaoReescritaResponse;
+import com.divergia.application.port.in.AceitarSugestaoReescritaUseCase;
 import com.divergia.application.port.in.AnalisarTextoUseCase;
 import com.divergia.application.port.in.EntradaAnalise;
 import com.divergia.application.port.in.EntradaTexto;
 import com.divergia.application.port.in.SugerirReescritaUseCase;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -29,10 +34,15 @@ public class AnaliseController {
 
     private final AnalisarTextoUseCase analisarTexto;
     private final SugerirReescritaUseCase sugerirReescrita;
+    private final AceitarSugestaoReescritaUseCase aceitarSugestaoReescrita;
 
-    public AnaliseController(AnalisarTextoUseCase analisarTexto, SugerirReescritaUseCase sugerirReescrita) {
+    public AnaliseController(
+            AnalisarTextoUseCase analisarTexto,
+            SugerirReescritaUseCase sugerirReescrita,
+            AceitarSugestaoReescritaUseCase aceitarSugestaoReescrita) {
         this.analisarTexto = analisarTexto;
         this.sugerirReescrita = sugerirReescrita;
+        this.aceitarSugestaoReescrita = aceitarSugestaoReescrita;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -56,6 +66,15 @@ public class AnaliseController {
     public SugestaoReescritaResponse sugerirReescrita(
             @AuthenticationPrincipal UUID usuarioId, @PathVariable UUID trechoId) {
         return new SugestaoReescritaResponse(sugerirReescrita.sugerir(usuarioId, trechoId));
+    }
+
+    @PutMapping("/trechos/{trechoId}/sugestao-reescrita")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void aceitarSugestaoReescrita(
+            @AuthenticationPrincipal UUID usuarioId,
+            @PathVariable UUID trechoId,
+            @Valid @RequestBody AceitarSugestaoRequest request) {
+        aceitarSugestaoReescrita.aceitar(usuarioId, trechoId, request.texto());
     }
 
     private EntradaTexto paraEntradaTexto(String texto, MultipartFile arquivo) {

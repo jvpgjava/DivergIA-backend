@@ -29,9 +29,10 @@ public interface LlmPort {
      * @param tipoDesvio dimensão da deriva já identificada (sentido/posição/intensidade)
      * @param explicacao explicação já dada para a deriva
      * @param exemplosRelevantes exemplos recuperados via RAG para calibrar a sugestão
-     * @return reescrita sugerida do trecho editado, fiel ao sentido do trecho original
+     * @return 3 reescritas alternativas do trecho editado, cada uma fiel ao sentido do
+     *         trecho original mas com fraseio distinto entre si
      */
-    String sugerirReescrita(
+    List<String> sugerirReescrita(
             String trechoOriginal,
             String trechoEditado,
             TipoDesvio tipoDesvio,

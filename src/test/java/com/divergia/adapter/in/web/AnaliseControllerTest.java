@@ -28,8 +28,11 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -193,12 +196,54 @@ class AnaliseControllerTest {
 
         given(llmPort.sugerirReescrita(
                 eq("o prazo é de dois anos"), eq("o prazo é rápido"), eq(TipoDesvio.SENTIDO), anyString(), any()))
-                .willReturn("o prazo é de dois anos, mas pode ser antecipado");
+                .willReturn(List.of(
+                        "o prazo é de dois anos, mas pode ser antecipado",
+                        "o prazo estabelecido é de dois anos, com alguma flexibilidade",
+                        "dois anos é o prazo, podendo ser antecipado"));
 
         mockMvc.perform(post("/api/analises/trechos/" + trechoId + "/sugestao-reescrita")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.sugestao").value("o prazo é de dois anos, mas pode ser antecipado"));
+                .andExpect(jsonPath("$.sugestoes", hasSize(3)))
+                .andExpect(jsonPath("$.sugestoes[0]").value("o prazo é de dois anos, mas pode ser antecipado"));
+    }
+
+    @Test
+    void deveAceitarUmaSugestaoDeReescritaEDevolverNaConsultaDaAnalise() throws Exception {
+        String token = cadastrarELogar("aceitar-sugestao+" + UUID.randomUUID() + "@example.com");
+
+        given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
+        given(llmPort.avaliarDerivas(eq("o prazo é de dois anos"), eq("o prazo é rápido"), any()))
+                .willReturn(List.of(new AvaliacaoDeDeriva(
+                        TipoDesvio.SENTIDO, "o prazo é de dois anos", "o prazo é rápido",
+                        "prazo específico virou vago", 0.8)));
+
+        String corpoAnalise = mockMvc.perform(multipart("/api/analises")
+                        .param("textoOriginal", "o prazo é de dois anos")
+                        .param("textoEditado", "o prazo é rápido")
+                        .param("manterHistorico", "true")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String analiseId = objectMapper.readTree(corpoAnalise).get("analiseId").asText();
+        String trechoId = objectMapper.readTree(corpoAnalise).get("trechos").get(0).get("id").asText();
+
+        mockMvc.perform(put("/api/analises/trechos/" + trechoId + "/sugestao-reescrita")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AceitarSugestaoBody(
+                                "o prazo é de dois anos, mas pode ser antecipado"))))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/historico/" + analiseId).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trechos[0].sugestaoAceita")
+                        .value("o prazo é de dois anos, mas pode ser antecipado"));
+    }
+
+    private record AceitarSugestaoBody(String texto) {
     }
 
     @Test

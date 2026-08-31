@@ -61,7 +61,8 @@ public class TrechoDerivaRepositoryAdapter implements TrechoDerivaRepositoryPort
                 existente.getTipoDesvio(),
                 existente.getExplicacao(),
                 existente.getIntensidade(),
-                true);
+                true,
+                existente.getSugestaoAceita());
         repository.save(atualizado);
     }
 }

@@ -63,13 +63,17 @@ class SugerirReescritaServiceTest {
         given(trechoDerivaRepository.buscarPorId(trechoId)).willReturn(Optional.of(trecho));
         given(analiseRepository.buscarPorId(analiseId)).willReturn(Optional.of(analise));
         given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
+        List<String> sugestoesGeradas = List.of(
+                "o prazo é de dois anos, mas pode variar",
+                "o prazo estabelecido é de dois anos, com alguma margem",
+                "dois anos é o prazo, sujeito a variação");
         given(llmPort.sugerirReescrita(
                 eq("o prazo é de dois anos"), eq("o prazo é rápido"), eq(TipoDesvio.SENTIDO), anyString(), any()))
-                .willReturn("o prazo é de dois anos, mas pode variar");
+                .willReturn(sugestoesGeradas);
 
-        String sugestao = service.sugerir(usuarioId, trechoId);
+        List<String> sugestoes = service.sugerir(usuarioId, trechoId);
 
-        assertThat(sugestao).isEqualTo("o prazo é de dois anos, mas pode variar");
+        assertThat(sugestoes).isEqualTo(sugestoesGeradas);
     }
 
     @Test

@@ -33,7 +33,7 @@ class TrechoDerivaPersistenceTest {
 
         TrechoDerivaJpaEntity trecho = new TrechoDerivaJpaEntity(
                 UUID.randomUUID(), analise.getId(), "trecho original", "trecho editado",
-                TipoDesvio.INTENSIDADE, "a intensidade da afirmação foi ampliada", 0.75, false);
+                TipoDesvio.INTENSIDADE, "a intensidade da afirmação foi ampliada", 0.75, false, null);
 
         entityManager.persistAndFlush(trecho);
         entityManager.clear();
@@ -56,10 +56,10 @@ class TrechoDerivaPersistenceTest {
 
         TrechoDerivaJpaEntity naoPromovido = entityManager.persistAndFlush(new TrechoDerivaJpaEntity(
                 UUID.randomUUID(), analise.getId(), "trecho A", "trecho A editado",
-                TipoDesvio.SENTIDO, "explicacao", 0.5, false));
+                TipoDesvio.SENTIDO, "explicacao", 0.5, false, null));
         entityManager.persistAndFlush(new TrechoDerivaJpaEntity(
                 UUID.randomUUID(), analise.getId(), "trecho B", "trecho B editado",
-                TipoDesvio.POSICAO, "explicacao", 0.3, true));
+                TipoDesvio.POSICAO, "explicacao", 0.3, true, null));
         entityManager.clear();
 
         assertThat(repository.findByUsuarioId(usuario.getId())).hasSize(2);

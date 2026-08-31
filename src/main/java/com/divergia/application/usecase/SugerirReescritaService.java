@@ -37,7 +37,7 @@ public class SugerirReescritaService implements SugerirReescritaUseCase {
     }
 
     @Override
-    public String sugerir(UUID usuarioId, UUID trechoDerivaId) {
+    public List<String> sugerir(UUID usuarioId, UUID trechoDerivaId) {
         TrechoDeriva trecho = trechoDerivaRepository.buscarPorId(trechoDerivaId)
                 .orElseThrow(TrechoDerivaNaoEncontradoException::new);
 
