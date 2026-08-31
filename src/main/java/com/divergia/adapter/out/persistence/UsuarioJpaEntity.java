@@ -27,15 +27,19 @@ public class UsuarioJpaEntity {
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
+    @Column(name = "foto_url")
+    private String fotoUrl;
+
     protected UsuarioJpaEntity() {
     }
 
-    public UsuarioJpaEntity(UUID id, String nome, String email, String senhaHash, Instant criadoEm) {
+    public UsuarioJpaEntity(UUID id, String nome, String email, String senhaHash, Instant criadoEm, String fotoUrl) {
         this.id = id;
         this.nome = nome;
         this.email = email;
         this.senhaHash = senhaHash;
         this.criadoEm = criadoEm;
+        this.fotoUrl = fotoUrl;
     }
 
     public UUID getId() {
@@ -56,5 +60,9 @@ public class UsuarioJpaEntity {
 
     public Instant getCriadoEm() {
         return criadoEm;
+    }
+
+    public String getFotoUrl() {
+        return fotoUrl;
     }
 }

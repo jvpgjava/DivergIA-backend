@@ -1,11 +1,17 @@
 package com.divergia.adapter.in.web;
 
+import com.divergia.adapter.in.web.dto.AlterarEmailRequest;
+import com.divergia.adapter.in.web.dto.AlterarSenhaRequest;
 import com.divergia.adapter.in.web.dto.CadastroRequest;
+import com.divergia.adapter.in.web.dto.FotoPerfilResponse;
 import com.divergia.adapter.in.web.dto.LoginRequest;
 import com.divergia.adapter.in.web.dto.LoginResponse;
 import com.divergia.adapter.in.web.dto.RecuperarSenhaRequest;
 import com.divergia.adapter.in.web.dto.RedefinirSenhaRequest;
 import com.divergia.adapter.in.web.dto.UsuarioResponse;
+import com.divergia.application.port.in.AlterarEmailUseCase;
+import com.divergia.application.port.in.AlterarSenhaUseCase;
+import com.divergia.application.port.in.AtualizarFotoPerfilUseCase;
 import com.divergia.application.port.in.AutenticarUsuarioUseCase;
 import com.divergia.application.port.in.CadastrarUsuarioUseCase;
 import com.divergia.application.port.in.EncerrarSessaoUseCase;
@@ -20,12 +26,17 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.UUID;
 
 @RestController
@@ -40,6 +51,9 @@ public class AuthController {
     private final RedefinirSenhaUseCase redefinirSenha;
     private final ExcluirContaUseCase excluirConta;
     private final ObterUsuarioLogadoUseCase obterUsuarioLogado;
+    private final AlterarSenhaUseCase alterarSenha;
+    private final AlterarEmailUseCase alterarEmail;
+    private final AtualizarFotoPerfilUseCase atualizarFotoPerfil;
 
     public AuthController(
             CadastrarUsuarioUseCase cadastrarUsuario,
@@ -48,7 +62,10 @@ public class AuthController {
             SolicitarRecuperacaoSenhaUseCase solicitarRecuperacaoSenha,
             RedefinirSenhaUseCase redefinirSenha,
             ExcluirContaUseCase excluirConta,
-            ObterUsuarioLogadoUseCase obterUsuarioLogado) {
+            ObterUsuarioLogadoUseCase obterUsuarioLogado,
+            AlterarSenhaUseCase alterarSenha,
+            AlterarEmailUseCase alterarEmail,
+            AtualizarFotoPerfilUseCase atualizarFotoPerfil) {
         this.cadastrarUsuario = cadastrarUsuario;
         this.autenticarUsuario = autenticarUsuario;
         this.encerrarSessao = encerrarSessao;
@@ -56,6 +73,9 @@ public class AuthController {
         this.redefinirSenha = redefinirSenha;
         this.excluirConta = excluirConta;
         this.obterUsuarioLogado = obterUsuarioLogado;
+        this.alterarSenha = alterarSenha;
+        this.alterarEmail = alterarEmail;
+        this.atualizarFotoPerfil = atualizarFotoPerfil;
     }
 
     @PostMapping("/cadastro")
@@ -95,6 +115,44 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void excluirConta(@AuthenticationPrincipal UUID usuarioId) {
         excluirConta.excluir(usuarioId);
+    }
+
+    @PutMapping("/senha")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void alterarSenha(@AuthenticationPrincipal UUID usuarioId, @Valid @RequestBody AlterarSenhaRequest request) {
+        alterarSenha.alterar(usuarioId, request.senhaAtual(), request.novaSenha());
+    }
+
+    @PutMapping("/email")
+    public UsuarioResponse alterarEmail(
+            @AuthenticationPrincipal UUID usuarioId, @Valid @RequestBody AlterarEmailRequest request) {
+        return UsuarioResponse.from(alterarEmail.alterar(usuarioId, request.novoEmail(), request.senhaAtual()));
+    }
+
+    @PostMapping(value = "/foto", consumes = "multipart/form-data")
+    public FotoPerfilResponse atualizarFoto(
+            @AuthenticationPrincipal UUID usuarioId, @RequestParam MultipartFile foto) {
+        if (foto.isEmpty()) {
+            throw new IllegalArgumentException("Nenhuma foto foi enviada");
+        }
+        String extensao = extrairExtensao(foto);
+        try {
+            return new FotoPerfilResponse(atualizarFotoPerfil.atualizar(usuarioId, foto.getBytes(), extensao));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Não foi possível ler a foto enviada", e);
+        }
+    }
+
+    private String extrairExtensao(MultipartFile foto) {
+        String nomeOriginal = foto.getOriginalFilename();
+        if (nomeOriginal != null && nomeOriginal.contains(".")) {
+            return nomeOriginal.substring(nomeOriginal.lastIndexOf('.') + 1).toLowerCase();
+        }
+        return switch (foto.getContentType()) {
+            case "image/png" -> "png";
+            case "image/webp" -> "webp";
+            default -> "jpg";
+        };
     }
 
     private String extrairToken(String cabecalhoAutorizacao) {

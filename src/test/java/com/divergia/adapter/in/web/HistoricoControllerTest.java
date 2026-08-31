@@ -1,5 +1,6 @@
 package com.divergia.adapter.in.web;
 
+import com.divergia.application.port.out.EmailPort;
 import com.divergia.application.port.out.ExtracaoDocumentoPort;
 import com.divergia.application.port.out.LlmPort;
 import com.divergia.application.port.out.VectorStorePort;
@@ -52,6 +53,9 @@ class HistoricoControllerTest {
 
     @MockitoBean
     private ExtracaoDocumentoPort extracaoDocumentoPort;
+
+    @MockitoBean
+    private EmailPort emailPort;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 

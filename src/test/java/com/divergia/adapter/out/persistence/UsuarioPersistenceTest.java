@@ -26,7 +26,7 @@ class UsuarioPersistenceTest {
     void devePersistirEBuscarUsuarioPorId() {
         UsuarioJpaEntity usuario = new UsuarioJpaEntity(
                 UUID.randomUUID(), "Ana Teste", "ana.teste+" + UUID.randomUUID() + "@example.com",
-                "hash-bcrypt-fake", Instant.now());
+                "hash-bcrypt-fake", Instant.now(), null);
 
         entityManager.persistAndFlush(usuario);
         entityManager.clear();
@@ -43,7 +43,7 @@ class UsuarioPersistenceTest {
     void deveBuscarUsuarioPorEmailEIndicarExistencia() {
         String email = "busca-por-email+" + UUID.randomUUID() + "@example.com";
         UsuarioJpaEntity usuario = new UsuarioJpaEntity(
-                UUID.randomUUID(), "Bia Teste", email, "hash-bcrypt-fake", Instant.now());
+                UUID.randomUUID(), "Bia Teste", email, "hash-bcrypt-fake", Instant.now(), null);
 
         entityManager.persistAndFlush(usuario);
         entityManager.clear();

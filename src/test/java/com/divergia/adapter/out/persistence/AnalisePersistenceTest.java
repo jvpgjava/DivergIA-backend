@@ -26,7 +26,7 @@ class AnalisePersistenceTest {
     void devePersistirEBuscarAnaliseComTextoBruto() {
         UsuarioJpaEntity usuario = entityManager.persistAndFlush(new UsuarioJpaEntity(
                 UUID.randomUUID(), "Usuário Teste", "analise+" + UUID.randomUUID() + "@example.com",
-                "hash-fake", Instant.now()));
+                "hash-fake", Instant.now(), null));
 
         AnaliseJpaEntity analise = new AnaliseJpaEntity(
                 UUID.randomUUID(), usuario.getId(), "texto original", "texto editado", true, Instant.now());
@@ -47,7 +47,7 @@ class AnalisePersistenceTest {
     void devePersistirAnaliseSemTextoBrutoQuandoNaoHaConsentimento() {
         UsuarioJpaEntity usuario = entityManager.persistAndFlush(new UsuarioJpaEntity(
                 UUID.randomUUID(), "Usuário Teste", "analise-sem-texto+" + UUID.randomUUID() + "@example.com",
-                "hash-fake", Instant.now()));
+                "hash-fake", Instant.now(), null));
 
         AnaliseJpaEntity analise = new AnaliseJpaEntity(
                 UUID.randomUUID(), usuario.getId(), null, null, false, Instant.now());
@@ -67,10 +67,10 @@ class AnalisePersistenceTest {
     void deveBuscarEExcluirTodasAsAnalisesPorUsuarioId() {
         UsuarioJpaEntity usuario = entityManager.persistAndFlush(new UsuarioJpaEntity(
                 UUID.randomUUID(), "Usuário Teste", "analise-usuario+" + UUID.randomUUID() + "@example.com",
-                "hash-fake", Instant.now()));
+                "hash-fake", Instant.now(), null));
         UsuarioJpaEntity outroUsuario = entityManager.persistAndFlush(new UsuarioJpaEntity(
                 UUID.randomUUID(), "Outro Usuário", "outro+" + UUID.randomUUID() + "@example.com",
-                "hash-fake", Instant.now()));
+                "hash-fake", Instant.now(), null));
 
         entityManager.persistAndFlush(new AnaliseJpaEntity(
                 UUID.randomUUID(), usuario.getId(), "a", "b", true, Instant.now()));
