@@ -27,7 +27,7 @@ class TrechoDerivaPersistenceTest {
     void devePersistirEBuscarTrechoDerivaDeUmaAnalise() {
         UsuarioJpaEntity usuario = entityManager.persistAndFlush(new UsuarioJpaEntity(
                 UUID.randomUUID(), "Usuário Teste", "trecho+" + UUID.randomUUID() + "@example.com",
-                "hash-fake", Instant.now()));
+                "hash-fake", Instant.now(), null));
         AnaliseJpaEntity analise = entityManager.persistAndFlush(new AnaliseJpaEntity(
                 UUID.randomUUID(), usuario.getId(), "original", "editado", true, Instant.now()));
 
@@ -50,7 +50,7 @@ class TrechoDerivaPersistenceTest {
     void deveBuscarTrechosPorUsuarioIdEFiltrarNaoPromovidos() {
         UsuarioJpaEntity usuario = entityManager.persistAndFlush(new UsuarioJpaEntity(
                 UUID.randomUUID(), "Usuário Teste", "trecho-usuario+" + UUID.randomUUID() + "@example.com",
-                "hash-fake", Instant.now()));
+                "hash-fake", Instant.now(), null));
         AnaliseJpaEntity analise = entityManager.persistAndFlush(new AnaliseJpaEntity(
                 UUID.randomUUID(), usuario.getId(), "original", "editado", true, Instant.now()));
 

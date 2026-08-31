@@ -26,7 +26,7 @@ class ConsentimentoPersistenceTest {
     void devePersistirEBuscarConsentimentoDeUsuario() {
         UsuarioJpaEntity usuario = entityManager.persistAndFlush(new UsuarioJpaEntity(
                 UUID.randomUUID(), "Usuário Teste", "consentimento+" + UUID.randomUUID() + "@example.com",
-                "hash-fake", Instant.now()));
+                "hash-fake", Instant.now(), null));
 
         ConsentimentoJpaEntity consentimento = new ConsentimentoJpaEntity(
                 UUID.randomUUID(), usuario.getId(), true, false, Instant.now());
@@ -46,7 +46,7 @@ class ConsentimentoPersistenceTest {
     void deveBuscarOConsentimentoMaisRecentePorUsuarioId() {
         UsuarioJpaEntity usuario = entityManager.persistAndFlush(new UsuarioJpaEntity(
                 UUID.randomUUID(), "Usuário Teste", "consentimento-recente+" + UUID.randomUUID() + "@example.com",
-                "hash-fake", Instant.now()));
+                "hash-fake", Instant.now(), null));
 
         Instant primeiro = Instant.now();
         entityManager.persistAndFlush(

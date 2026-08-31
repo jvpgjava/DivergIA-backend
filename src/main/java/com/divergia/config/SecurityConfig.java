@@ -12,15 +12,23 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http, JwtAuthenticationFilter jwtFilter, RateLimitingFilter rateLimitingFilter)
+            HttpSecurity http,
+            JwtAuthenticationFilter jwtFilter,
+            RateLimitingFilter rateLimitingFilter,
+            AuthenticationEntryPointImpl authenticationEntryPoint)
             throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authenticationEntryPoint))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // Fotos de perfil são servidas por URL direta (ex: `Image.network` no
+                        // app) — quem busca essa URL nunca manda um Bearer token, então
+                        // precisam ficar públicas como qualquer avatar estático.
+                        .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/cadastro", "/api/auth/login",
                                 "/api/auth/recuperar-senha", "/api/auth/redefinir-senha")

@@ -1,6 +1,7 @@
 package com.divergia.adapter.in.web;
 
 import com.divergia.application.port.out.EmailPort;
+import com.divergia.application.port.out.FotoPerfilPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,11 +19,15 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -43,6 +49,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private EmailPort emailPort;
+
+    @MockitoBean
+    private FotoPerfilPort fotoPerfilPort;
 
     private String emailUnico(String prefixo) {
         return prefixo + "+" + UUID.randomUUID() + "@example.com";
@@ -204,6 +213,99 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void deveAlterarASenhaComSucesso() throws Exception {
+        String email = emailUnico("alterar-senha");
+        cadastrar("Ana", email, "senha-antiga-123");
+        String token = login(email, "senha-antiga-123");
+
+        mockMvc.perform(put("/api/auth/senha")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new AlterarSenhaBody("senha-antiga-123", "senha-nova-456"))))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginBody(email, "senha-antiga-123"))))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginBody(email, "senha-nova-456"))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void deveRejeitarAlteracaoDeSenhaComSenhaAtualErrada() throws Exception {
+        String email = emailUnico("alterar-senha-errada");
+        cadastrar("Ana", email, "senha12345");
+        String token = login(email, "senha12345");
+
+        mockMvc.perform(put("/api/auth/senha")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new AlterarSenhaBody("senha-errada", "senha-nova-456"))))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deveAlterarOEmailComSucesso() throws Exception {
+        String email = emailUnico("alterar-email");
+        String novoEmail = emailUnico("email-novo");
+        cadastrar("Ana", email, "senha12345");
+        String token = login(email, "senha12345");
+
+        mockMvc.perform(put("/api/auth/email")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AlterarEmailBody(novoEmail, "senha12345"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value(novoEmail));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginBody(novoEmail, "senha12345"))))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void deveRejeitarAlteracaoDeEmailParaEmailJaCadastrado() throws Exception {
+        String email = emailUnico("alterar-email-conflito");
+        String emailOcupado = emailUnico("ja-existe");
+        cadastrar("Ana", email, "senha12345");
+        cadastrar("Outra", emailOcupado, "senha12345");
+        String token = login(email, "senha12345");
+
+        mockMvc.perform(put("/api/auth/email")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AlterarEmailBody(emailOcupado, "senha12345"))))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void deveAtualizarAFotoDePerfil() throws Exception {
+        String email = emailUnico("foto-perfil");
+        cadastrar("Ana", email, "senha12345");
+        String token = login(email, "senha12345");
+
+        given(fotoPerfilPort.salvar(any(), any(), eq("png")))
+                .willReturn("https://api.example.com/uploads/foto.png");
+
+        MockMultipartFile foto = new MockMultipartFile(
+                "foto", "avatar.png", MediaType.IMAGE_PNG_VALUE, new byte[] {1, 2, 3});
+
+        mockMvc.perform(multipart("/api/auth/foto").file(foto).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fotoUrl").value("https://api.example.com/uploads/foto.png"));
+
+        mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(jsonPath("$.fotoUrl").value("https://api.example.com/uploads/foto.png"));
+    }
+
     private void cadastrar(String nome, String email, String senha) throws Exception {
         mockMvc.perform(post("/api/auth/cadastro")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -232,5 +334,11 @@ class AuthControllerTest {
     }
 
     private record RedefinirSenhaBody(String token, String novaSenha) {
+    }
+
+    private record AlterarSenhaBody(String senhaAtual, String novaSenha) {
+    }
+
+    private record AlterarEmailBody(String novoEmail, String senhaAtual) {
     }
 }

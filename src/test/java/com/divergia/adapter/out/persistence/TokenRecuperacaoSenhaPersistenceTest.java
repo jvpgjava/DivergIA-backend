@@ -26,7 +26,7 @@ class TokenRecuperacaoSenhaPersistenceTest {
     void devePersistirEBuscarTokenPorHash() {
         UsuarioJpaEntity usuario = entityManager.persistAndFlush(new UsuarioJpaEntity(
                 UUID.randomUUID(), "Usuário Teste", "token-recuperacao+" + UUID.randomUUID() + "@example.com",
-                "hash-fake", Instant.now()));
+                "hash-fake", Instant.now(), null));
 
         Instant agora = Instant.now();
         TokenRecuperacaoSenhaJpaEntity token = new TokenRecuperacaoSenhaJpaEntity(

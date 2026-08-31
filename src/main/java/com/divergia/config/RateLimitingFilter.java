@@ -43,6 +43,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         this.regras = List.of(
                 new Regra("POST", "/api/auth/login", authCapacidade, Duration.ofMinutes(authJanelaMinutos)),
                 new Regra("POST", "/api/auth/cadastro", authCapacidade, Duration.ofMinutes(authJanelaMinutos)),
+                // O código de recuperação agora tem só 6 caracteres (~30 bits de
+                // entropia) em vez do token longo de antes — sem rate limit aqui,
+                // dá pra tentar força bruta contra ele.
+                new Regra("POST", "/api/auth/redefinir-senha", authCapacidade, Duration.ofMinutes(authJanelaMinutos)),
                 new Regra("POST", "/api/analises", analiseCapacidade, Duration.ofMinutes(analiseJanelaMinutos)));
     }
 

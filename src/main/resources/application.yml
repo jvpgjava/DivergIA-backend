@@ -63,6 +63,9 @@ divergia:
   promocao-rag:
     # todo dia às 3h da manhã, por padrão
     cron: ${PROMOCAO_RAG_CRON:0 0 3 * * *}
+  uploads:
+    diretorio: ${UPLOADS_DIR:./uploads}
+    base-url: ${UPLOADS_BASE_URL:http://localhost:8080/uploads}
 
 management:
   endpoints:

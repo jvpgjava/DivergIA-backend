@@ -1,5 +1,6 @@
 package com.divergia.application.usecase;
 
+import com.divergia.application.port.out.EmailPort;
 import com.divergia.application.port.out.PasswordEncoderPort;
 import com.divergia.application.port.out.UsuarioRepositoryPort;
 import com.divergia.domain.model.Usuario;
@@ -27,11 +28,14 @@ class CadastrarUsuarioServiceTest {
     @Mock
     private PasswordEncoderPort passwordEncoder;
 
+    @Mock
+    private EmailPort emailPort;
+
     private CadastrarUsuarioService service;
 
     @BeforeEach
     void setUp() {
-        service = new CadastrarUsuarioService(usuarioRepository, passwordEncoder);
+        service = new CadastrarUsuarioService(usuarioRepository, passwordEncoder, emailPort);
     }
 
     @Test
@@ -49,6 +53,8 @@ class CadastrarUsuarioServiceTest {
         ArgumentCaptor<Usuario> captor = ArgumentCaptor.forClass(Usuario.class);
         verify(usuarioRepository).salvar(captor.capture());
         assertThat(captor.getValue().senhaHash()).isEqualTo("hash-codificado");
+
+        verify(emailPort).enviarBoasVindas("ana@example.com", "Ana");
     }
 
     @Test
@@ -60,5 +66,6 @@ class CadastrarUsuarioServiceTest {
 
         verify(usuarioRepository, never()).salvar(any());
         verify(passwordEncoder, never()).codificar(anyString());
+        verify(emailPort, never()).enviarBoasVindas(anyString(), anyString());
     }
 }

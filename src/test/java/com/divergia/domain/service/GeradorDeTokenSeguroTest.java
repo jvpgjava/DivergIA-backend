@@ -14,7 +14,14 @@ class GeradorDeTokenSeguroTest {
         String segundo = gerador.gerar();
 
         assertThat(primeiro).isNotEqualTo(segundo);
-        assertThat(primeiro).hasSizeGreaterThan(30);
+    }
+
+    @Test
+    void deveGerarCodigoDeSeisCaracteresSemLetrasOuDigitosAmbiguos() {
+        String codigo = gerador.gerar();
+
+        assertThat(codigo).hasSize(6);
+        assertThat(codigo).matches("[A-HJ-NP-Z2-9]{6}");
     }
 
     @Test
