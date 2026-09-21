@@ -6,12 +6,19 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-public record ResultadoAnaliseResponse(UUID analiseId, Instant criadoEm, List<TrechoDerivaResponse> trechos) {
+public record ResultadoAnaliseResponse(
+        UUID analiseId,
+        Instant criadoEm,
+        String textoOriginal,
+        String textoEditado,
+        List<TrechoDerivaResponse> trechos) {
 
     public static ResultadoAnaliseResponse from(ResultadoAnalise resultado) {
         return new ResultadoAnaliseResponse(
                 resultado.analise().id(),
                 resultado.analise().criadoEm(),
+                resultado.analise().textoOriginal(),
+                resultado.analise().textoEditado(),
                 resultado.trechosDeDeriva().stream().map(TrechoDerivaResponse::from).toList());
     }
 }

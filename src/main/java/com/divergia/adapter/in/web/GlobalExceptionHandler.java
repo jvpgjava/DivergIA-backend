@@ -18,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import java.io.UncheckedIOException;
 import java.util.stream.Collectors;
@@ -91,6 +93,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErroResponse> tratarFalhaDeLeituraDeArquivo(
             UncheckedIOException e, HttpServletRequest request) {
         return responder(HttpStatus.BAD_REQUEST, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErroResponse> tratarArquivoMuitoGrande(
+            MaxUploadSizeExceededException e, HttpServletRequest request) {
+        return responder(
+                HttpStatus.BAD_REQUEST,
+                "O arquivo enviado é muito grande. O tamanho máximo permitido é 20MB.",
+                request);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<ErroResponse> tratarFalhaDeUpload(MultipartException e, HttpServletRequest request) {
+        log.warn("Falha ao processar upload multipart em {}: {}", request.getRequestURI(), e.getMessage());
+        return responder(HttpStatus.BAD_REQUEST, "Não foi possível processar o arquivo enviado.", request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

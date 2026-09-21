@@ -3,6 +3,7 @@ package com.divergia.application.usecase;
 import com.divergia.application.port.in.ExcluirHistoricoUseCase;
 import com.divergia.application.port.out.AnaliseRepositoryPort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -16,6 +17,7 @@ public class ExcluirHistoricoService implements ExcluirHistoricoUseCase {
     }
 
     @Override
+    @Transactional
     public void excluirTudo(UUID usuarioId) {
         analiseRepository.excluirTodasPorUsuarioId(usuarioId);
     }

@@ -14,6 +14,8 @@ import com.divergia.domain.model.ExemploRag;
 import com.divergia.domain.model.ResultadoAnalise;
 import com.divergia.domain.model.TrechoDeriva;
 import com.divergia.domain.service.PoliticaRetencaoDeTexto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,8 @@ import java.util.UUID;
 
 @Service
 public class AnalisarTextoService implements AnalisarTextoUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(AnalisarTextoService.class);
 
     private final ExtracaoDocumentoPort extracaoDocumentoPort;
     private final VectorStorePort vectorStorePort;
@@ -55,9 +59,8 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
         String textoOriginal = resolverTexto(entrada.original());
         String textoEditado = resolverTexto(entrada.editado());
 
-        List<ExemploRag> exemplos = vectorStorePort.buscarSimilares(
-                textoOriginal + "\n" + textoEditado, quantidadeExemplosRag);
-        List<AvaliacaoDeDeriva> avaliacoes = llmPort.avaliarDerivas(textoOriginal, textoEditado, exemplos);
+        List<AvaliacaoDeDeriva> avaliacoes = llmPort.avaliarDerivas(
+                textoOriginal, textoEditado, buscarExemplosRag(textoOriginal, textoEditado));
 
         Analise analiseBruta = new Analise(
                 UUID.randomUUID(), entrada.usuarioId(), textoOriginal, textoEditado,
@@ -90,5 +93,14 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
             return extracaoDocumentoPort.extrairTexto(entradaTexto.arquivo(), entradaTexto.nomeArquivo());
         }
         return entradaTexto.texto();
+    }
+
+    private List<ExemploRag> buscarExemplosRag(String textoOriginal, String textoEditado) {
+        try {
+            return vectorStorePort.buscarSimilares(textoOriginal + "\n" + textoEditado, quantidadeExemplosRag);
+        } catch (Exception e) {
+            log.warn("Falha ao buscar exemplos de RAG, prosseguindo sem eles: {}", e.getMessage());
+            return List.of();
+        }
     }
 }
