@@ -23,7 +23,7 @@ public class AlterarSenhaService implements AlterarSenhaUseCase {
     public void alterar(UUID usuarioId, String senhaAtual, String novaSenha) {
         Usuario usuario = usuarioRepository.buscarPorId(usuarioId).orElseThrow(UsuarioNaoEncontradoException::new);
         if (!passwordEncoder.confere(senhaAtual, usuario.senhaHash())) {
-            throw new CredenciaisInvalidasException();
+            throw new SenhaAtualIncorretaException();
         }
         Usuario atualizado = usuario.comSenhaHash(passwordEncoder.codificar(novaSenha));
         usuarioRepository.salvar(atualizado);

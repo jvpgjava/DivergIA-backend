@@ -29,19 +29,15 @@ class GlobalExceptionHandlerTest {
     private EmailPort emailPort;
 
     @Test
-    void deveDevolverShapePadronizadoParaEmailJaCadastrado() throws Exception {
-        String email = "erro-padrao+" + UUID.randomUUID() + "@example.com";
-        String corpo = "{\"nome\":\"Teste\",\"email\":\"" + email + "\",\"senha\":\"senha12345\"}";
+    void deveDevolverShapePadronizadoParaCredenciaisInvalidas() throws Exception {
+        String corpo = "{\"email\":\"ninguem+" + UUID.randomUUID() + "@example.com\",\"senha\":\"senha12345\"}";
 
-        mockMvc.perform(post("/api/auth/cadastro").contentType(MediaType.APPLICATION_JSON).content(corpo))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(post("/api/auth/cadastro").contentType(MediaType.APPLICATION_JSON).content(corpo))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.error").value("Conflict"))
-                .andExpect(jsonPath("$.message").exists())
-                .andExpect(jsonPath("$.path").value("/api/auth/cadastro"))
+        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.error").value("Unauthorized"))
+                .andExpect(jsonPath("$.message").value("E-mail ou senha inválidos"))
+                .andExpect(jsonPath("$.path").value("/api/auth/login"))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 

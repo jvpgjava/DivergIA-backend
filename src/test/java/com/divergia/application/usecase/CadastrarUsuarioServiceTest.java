@@ -58,14 +58,15 @@ class CadastrarUsuarioServiceTest {
     }
 
     @Test
-    void deveLancarExcecaoQuandoEmailJaCadastrado() {
+    void emailJaCadastradoRespondeComoCadastroNovoSemTocarNaContaExistente() {
         given(usuarioRepository.existeComEmail("ana@example.com")).willReturn(true);
+        given(passwordEncoder.codificar("senha12345")).willReturn("hash-codificado");
 
-        assertThatThrownBy(() -> service.cadastrar("Ana", "ana@example.com", "senha12345"))
-                .isInstanceOf(EmailJaCadastradoException.class);
+        Usuario resposta = service.cadastrar("Ana", "ana@example.com", "senha12345");
 
+        assertThat(resposta.email()).isEqualTo("ana@example.com");
+        verify(passwordEncoder).codificar("senha12345");
         verify(usuarioRepository, never()).salvar(any());
-        verify(passwordEncoder, never()).codificar(anyString());
         verify(emailPort, never()).enviarBoasVindas(anyString(), anyString());
     }
 }

@@ -29,12 +29,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/analises")
 @Tag(name = "Análise", description = "Análise comparativa de textos e sugestão de reescrita fiel")
 public class AnaliseController {
+
+    private static final Set<String> EXTENSOES_PERMITIDAS =
+            Set.of("pdf", "docx", "doc", "pptx", "txt", "md", "html", "htm");
 
     private final AnalisarTextoUseCase analisarTexto;
     private final SugerirReescritaUseCase sugerirReescrita;
@@ -89,9 +94,21 @@ public class AnaliseController {
             return EntradaTexto.deTexto(texto);
         }
         try {
-            return EntradaTexto.deArquivo(arquivo.getBytes(), arquivo.getOriginalFilename());
+            return EntradaTexto.deArquivo(arquivo.getBytes(), nomeSeguro(arquivo.getOriginalFilename()));
         } catch (IOException e) {
-            throw new UncheckedIOException("Não foi possível ler o arquivo enviado: " + arquivo.getOriginalFilename(), e);
+            throw new UncheckedIOException("Não foi possível ler o arquivo enviado", e);
         }
+    }
+
+    // O nome do cliente nunca segue adiante: só a extensão, de uma lista fechada, decide o formato.
+    private static String nomeSeguro(String nomeOriginal) {
+        String extensao = nomeOriginal == null || !nomeOriginal.contains(".")
+                ? ""
+                : nomeOriginal.substring(nomeOriginal.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
+        if (!EXTENSOES_PERMITIDAS.contains(extensao)) {
+            throw new RequisicaoInvalidaException(
+                    "Formato de arquivo não suportado. Use PDF, DOCX, DOC, PPTX, TXT, MD ou HTML.");
+        }
+        return "documento." + extensao;
     }
 }

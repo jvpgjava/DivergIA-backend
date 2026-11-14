@@ -37,6 +37,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class AuthControllerTest {
 
+    private static final byte[] PNG_MINIMO = {
+            (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0x0D, 0x49, 0x48, 0x44, 0x52};
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -85,10 +88,20 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(corpo)))
                 .andExpect(status().isCreated());
 
+        CadastroBody outraSenha = new CadastroBody("Atacante", email, "outraSenha999");
         mockMvc.perform(post("/api/auth/cadastro")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(corpo)))
-                .andExpect(status().isConflict());
+                        .content(objectMapper.writeValueAsString(outraSenha)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginBody(email, "outraSenha999"))))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginBody(email, "senha12345"))))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -241,7 +254,8 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 new AlterarSenhaBody("senha-errada", "senha-nova-456"))))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Senha atual incorreta."));
     }
 
     @Test
@@ -289,7 +303,7 @@ class AuthControllerTest {
                 .willReturn("https://api.example.com/uploads/foto.png");
 
         MockMultipartFile foto = new MockMultipartFile(
-                "foto", "avatar.png", MediaType.IMAGE_PNG_VALUE, new byte[] {1, 2, 3});
+                "foto", "avatar.png", MediaType.IMAGE_PNG_VALUE, PNG_MINIMO);
 
         mockMvc.perform(multipart("/api/auth/foto").file(foto).header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())

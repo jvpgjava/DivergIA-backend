@@ -19,6 +19,7 @@ import com.divergia.application.port.in.ExcluirContaUseCase;
 import com.divergia.application.port.in.ObterUsuarioLogadoUseCase;
 import com.divergia.application.port.in.RedefinirSenhaUseCase;
 import com.divergia.application.port.in.SolicitarRecuperacaoSenhaUseCase;
+import com.divergia.domain.service.TipoDeImagem;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -43,6 +44,8 @@ import java.util.UUID;
 @RequestMapping("/api/auth")
 @Tag(name = "Autenticação", description = "Cadastro, login, logout, recuperação de senha e exclusão de conta")
 public class AuthController {
+
+    private static final long TAMANHO_MAXIMO_FOTO = 5L * 1024 * 1024;
 
     private final CadastrarUsuarioUseCase cadastrarUsuario;
     private final AutenticarUsuarioUseCase autenticarUsuario;
@@ -133,31 +136,26 @@ public class AuthController {
     public FotoPerfilResponse atualizarFoto(
             @AuthenticationPrincipal UUID usuarioId, @RequestParam MultipartFile foto) {
         if (foto.isEmpty()) {
-            throw new IllegalArgumentException("Nenhuma foto foi enviada");
+            throw new RequisicaoInvalidaException("Nenhuma foto foi enviada.");
         }
-        String extensao = extrairExtensao(foto);
+        if (foto.getSize() > TAMANHO_MAXIMO_FOTO) {
+            throw new RequisicaoInvalidaException("A foto deve ter no máximo 5 MB.");
+        }
+        byte[] conteudo;
         try {
-            return new FotoPerfilResponse(atualizarFotoPerfil.atualizar(usuarioId, foto.getBytes(), extensao));
+            conteudo = foto.getBytes();
         } catch (IOException e) {
             throw new UncheckedIOException("Não foi possível ler a foto enviada", e);
         }
+        TipoDeImagem tipo = TipoDeImagem.detectar(conteudo)
+                .orElseThrow(() -> new RequisicaoInvalidaException("A foto deve ser uma imagem JPG, PNG ou WEBP."));
+        return new FotoPerfilResponse(atualizarFotoPerfil.atualizar(usuarioId, conteudo, tipo.extensao()));
     }
 
-    private String extrairExtensao(MultipartFile foto) {
-        String nomeOriginal = foto.getOriginalFilename();
-        if (nomeOriginal != null && nomeOriginal.contains(".")) {
-            return nomeOriginal.substring(nomeOriginal.lastIndexOf('.') + 1).toLowerCase();
-        }
-        return switch (foto.getContentType()) {
-            case "image/png" -> "png";
-            case "image/webp" -> "webp";
-            default -> "jpg";
-        };
-    }
 
     private String extrairToken(String cabecalhoAutorizacao) {
         if (cabecalhoAutorizacao == null || !cabecalhoAutorizacao.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Cabeçalho Authorization ausente ou mal formado");
+            throw new RequisicaoInvalidaException("Cabeçalho Authorization ausente ou mal formado.");
         }
         return cabecalhoAutorizacao.substring("Bearer ".length());
     }
