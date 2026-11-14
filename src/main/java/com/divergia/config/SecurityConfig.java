@@ -28,7 +28,7 @@ public class SecurityConfig {
                         // Fotos são carregadas por URL direta (Image.network), que não envia o Bearer token.
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers(
-                                "/api/auth/cadastro", "/api/auth/login",
+                                "/api/auth/cadastro", "/api/auth/login", "/api/auth/google",
                                 "/api/auth/recuperar-senha", "/api/auth/redefinir-senha")
                         .permitAll()
                         .anyRequest().authenticated())

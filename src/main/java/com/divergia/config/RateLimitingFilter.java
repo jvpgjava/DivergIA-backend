@@ -48,6 +48,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         this.regras = List.of(
                 regra("POST", "/api/auth/login", authCapacidade, auth),
                 regra("POST", "/api/auth/cadastro", authCapacidade, auth),
+                regra("POST", "/api/auth/google", authCapacidade, auth),
                 // O código de recuperação tem só 6 caracteres: sem limite, cabe força bruta.
                 regra("POST", "/api/auth/redefinir-senha", authCapacidade, auth),
                 regra("POST", "/api/auth/recuperar-senha", authCapacidade, auth),
