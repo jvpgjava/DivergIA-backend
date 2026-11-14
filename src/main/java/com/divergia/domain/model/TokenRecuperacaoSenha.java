@@ -4,11 +4,6 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Token de uso único para redefinição de senha. Guarda apenas o hash do
- * token — o valor bruto só existe no momento em que é gerado e enviado por
- * e-mail, nunca é persistido.
- */
 public record TokenRecuperacaoSenha(
         UUID id, UUID usuarioId, String tokenHash, Instant criadoEm, Instant expiraEm, Instant usadoEm) {
 

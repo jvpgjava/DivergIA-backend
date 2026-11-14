@@ -8,12 +8,6 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.UUID;
 
-/**
- * Resumo de uma análise para a listagem do histórico. {@code pontuacaoIntensidade}
- * e {@code tipoDesvioPrincipal} vêm do trecho de maior intensidade (a
- * divergência mais severa encontrada); ambos — e {@code textoPreview} —
- * ficam nulos quando a análise não tem trechos ou não teve o texto retido.
- */
 public record AnaliseResumoResponse(
         UUID id,
         Instant criadoEm,

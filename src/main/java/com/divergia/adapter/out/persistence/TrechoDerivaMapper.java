@@ -16,7 +16,8 @@ public class TrechoDerivaMapper {
                 entity.getTipoDesvio(),
                 entity.getExplicacao(),
                 entity.getIntensidade(),
-                entity.isPromovidoParaRag());
+                entity.isPromovidoParaRag(),
+                entity.getSugestaoAceita());
     }
 
     public static TrechoDerivaJpaEntity toEntity(TrechoDeriva trechoDeriva) {
@@ -28,6 +29,7 @@ public class TrechoDerivaMapper {
                 trechoDeriva.tipoDesvio(),
                 trechoDeriva.explicacao(),
                 trechoDeriva.intensidade(),
-                trechoDeriva.promovidoParaRag());
+                trechoDeriva.promovidoParaRag(),
+                trechoDeriva.sugestaoAceita());
     }
 }

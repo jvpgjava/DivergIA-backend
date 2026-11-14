@@ -11,13 +11,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Teste de ponta a ponta da superfície REST exposta até a Fase 0: health
- * check público, documentação OpenAPI/Swagger pública, e postura de
- * "negar por padrão" da Spring Security para qualquer rota não liberada
- * explicitamente. Sobe o contexto Spring completo (DispatcherServlet, filtros
- * de segurança reais) via MockMvc.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 class RestEndToEndTest {

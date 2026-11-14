@@ -3,10 +3,6 @@ package com.divergia.domain.model;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Um trecho específico dentro de uma {@link Analise} onde foi detectada
- * deriva de sentido, posição ou intensidade em relação ao texto original.
- */
 public record TrechoDeriva(
         UUID id,
         UUID analiseId,
@@ -15,7 +11,8 @@ public record TrechoDeriva(
         TipoDesvio tipoDesvio,
         String explicacao,
         double intensidade,
-        boolean promovidoParaRag) {
+        boolean promovidoParaRag,
+        String sugestaoAceita) {
 
     public TrechoDeriva {
         Objects.requireNonNull(id, "id não pode ser nulo");
@@ -33,5 +30,25 @@ public record TrechoDeriva(
         if (intensidade < 0.0 || intensidade > 1.0) {
             throw new IllegalArgumentException("intensidade deve estar entre 0.0 e 1.0");
         }
+    }
+
+    public TrechoDeriva(
+            UUID id,
+            UUID analiseId,
+            String trechoOriginal,
+            String trechoEditado,
+            TipoDesvio tipoDesvio,
+            String explicacao,
+            double intensidade,
+            boolean promovidoParaRag) {
+        this(
+                id, analiseId, trechoOriginal, trechoEditado, tipoDesvio, explicacao, intensidade,
+                promovidoParaRag, null);
+    }
+
+    public TrechoDeriva comSugestaoAceita(String texto) {
+        return new TrechoDeriva(
+                id, analiseId, trechoOriginal, trechoEditado, tipoDesvio, explicacao, intensidade,
+                promovidoParaRag, texto);
     }
 }

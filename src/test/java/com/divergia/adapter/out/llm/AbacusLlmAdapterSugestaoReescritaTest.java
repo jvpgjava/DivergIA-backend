@@ -17,11 +17,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integração do método de sugestão de reescrita contra um servidor HTTP
- * local que imita o formato de resposta OpenAI-compatible — nenhuma chamada
- * bate na API real durante o teste/CI.
- */
 @SpringBootTest
 class AbacusLlmAdapterSugestaoReescritaTest {
 
@@ -31,6 +26,9 @@ class AbacusLlmAdapterSugestaoReescritaTest {
     static void subirServidorMock() throws IOException {
         servidorMock = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
         servidorMock.createContext("/v1/chat/completions", exchange -> {
+            String conteudo = "[\\\"o prazo é de dois anos, sujeito a ajustes\\\", "
+                    + "\\\"o prazo estabelecido é de dois anos, com margem pra ajustes\\\", "
+                    + "\\\"dois anos é o prazo definido, podendo ser ajustado\\\"]";
             String corpo = "{"
                     + "\"id\":\"chatcmpl-teste\","
                     + "\"object\":\"chat.completion\","
@@ -39,7 +37,7 @@ class AbacusLlmAdapterSugestaoReescritaTest {
                     + "\"choices\":[{"
                     + "\"index\":0,"
                     + "\"message\":{\"role\":\"assistant\",\"content\":"
-                    + "\"\\\"o prazo é de dois anos, sujeito a ajustes\\\"\"},"
+                    + "\"" + conteudo + "\"},"
                     + "\"finish_reason\":\"stop\"}]}";
             byte[] bytes = corpo.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
@@ -67,11 +65,15 @@ class AbacusLlmAdapterSugestaoReescritaTest {
     private AbacusLlmAdapter adapter;
 
     @Test
-    void deveSugerirReescritaERemoverAspasEnvolventesDaResposta() {
-        String sugestao = adapter.sugerirReescrita(
+    void deveSugerirTresReescritasAPartirDoArrayJsonDaResposta() {
+        List<String> sugestoes = adapter.sugerirReescrita(
                 "o prazo é de dois anos", "o prazo é rápido", TipoDesvio.SENTIDO,
                 "prazo específico virou vago", List.of());
 
-        assertThat(sugestao).isEqualTo("o prazo é de dois anos, sujeito a ajustes");
+        assertThat(sugestoes).hasSize(3);
+        assertThat(sugestoes).containsExactly(
+                "o prazo é de dois anos, sujeito a ajustes",
+                "o prazo estabelecido é de dois anos, com margem pra ajustes",
+                "dois anos é o prazo definido, podendo ser ajustado");
     }
 }

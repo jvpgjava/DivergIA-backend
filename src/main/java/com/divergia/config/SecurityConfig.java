@@ -25,9 +25,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
-                        // Fotos de perfil são servidas por URL direta (ex: `Image.network` no
-                        // app) — quem busca essa URL nunca manda um Bearer token, então
-                        // precisam ficar públicas como qualquer avatar estático.
+                        // Fotos são carregadas por URL direta (Image.network), que não envia o Bearer token.
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/cadastro", "/api/auth/login",

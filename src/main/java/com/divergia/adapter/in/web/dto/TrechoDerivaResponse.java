@@ -11,7 +11,8 @@ public record TrechoDerivaResponse(
         String trechoOriginal,
         String trechoEditado,
         String explicacao,
-        double intensidade) {
+        double intensidade,
+        String sugestaoAceita) {
 
     public static TrechoDerivaResponse from(TrechoDeriva trecho) {
         return new TrechoDerivaResponse(
@@ -20,6 +21,7 @@ public record TrechoDerivaResponse(
                 trecho.trechoOriginal(),
                 trecho.trechoEditado(),
                 trecho.explicacao(),
-                trecho.intensidade());
+                trecho.intensidade(),
+                trecho.sugestaoAceita());
     }
 }

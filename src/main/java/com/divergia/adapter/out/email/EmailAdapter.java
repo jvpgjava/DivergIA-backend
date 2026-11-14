@@ -15,9 +15,6 @@ import org.thymeleaf.context.Context;
 public class EmailAdapter implements EmailPort {
 
     private static final String LOGO_CONTENT_ID = "logo-divergia";
-    // Versão "dark" (texto branco) porque a logo fica sobre uma faixa escura
-    // no cabeçalho do e-mail — não a versão de texto escuro, que é pensada
-    // pra ir sobre fundo claro.
     private static final String LOGO_CLASSPATH = "templates/email/images/logo-divergia-dark.png";
 
     private final JavaMailSender mailSender;
@@ -39,11 +36,6 @@ public class EmailAdapter implements EmailPort {
     @Override
     public void enviarRecuperacaoSenha(String destinatario, String tokenBruto) {
         Context contexto = new Context();
-        // Espaço de verdade entre cada caractere em vez de `letter-spacing` no
-        // CSS — `letter-spacing` deixa um espaço sobrando depois do último
-        // caractere que vários clientes de e-mail não compensam, então o
-        // texto nunca centraliza direito por mais que se ajuste a margem.
-        // Com espaço literal, `text-align:center` simplesmente funciona.
         contexto.setVariable("token", espacarCaracteres(tokenBruto));
         contexto.setVariable("validadeMinutos", validadeRecuperacaoMinutos);
         contexto.setVariable("logoContentId", LOGO_CONTENT_ID);
@@ -51,6 +43,7 @@ public class EmailAdapter implements EmailPort {
     }
 
     private String espacarCaracteres(String texto) {
+        // Espaço literal em vez de letter-spacing: vários clientes de e-mail não centralizam com letter-spacing.
         return String.join(" ", texto.split(""));
     }
 
@@ -66,9 +59,7 @@ public class EmailAdapter implements EmailPort {
         String corpoHtml = templateEngine.process(template, contexto);
         MimeMessage mensagem = mailSender.createMimeMessage();
         try {
-            // `true` (multipart) é obrigatório aqui — sem isso `addInline` falha,
-            // já que a logo embutida por Content-ID exige uma mensagem
-            // multipart/related, não uma simples text/html.
+            // Multipart é obrigatório para a logo embutida via addInline.
             MimeMessageHelper helper = new MimeMessageHelper(mensagem, true, "UTF-8");
             helper.setFrom(remetente);
             helper.setTo(destinatario);

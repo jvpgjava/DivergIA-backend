@@ -21,7 +21,7 @@ public class ExcluirAnaliseService implements ExcluirAnaliseUseCase {
         Analise analise = analiseRepository.buscarPorId(analiseId)
                 .orElseThrow(AnaliseNaoEncontradaException::new);
 
-        if (!analise.usuarioId().equals(usuarioId)) {
+        if (!analise.pertenceA(usuarioId)) {
             throw new AcessoNaoAutorizadoException();
         }
 

@@ -1,4 +1,6 @@
 package com.divergia.adapter.in.web.dto;
 
-public record SugestaoReescritaResponse(String sugestao) {
+import java.util.List;
+
+public record SugestaoReescritaResponse(List<String> sugestoes) {
 }
