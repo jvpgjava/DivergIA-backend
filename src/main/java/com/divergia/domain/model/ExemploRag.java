@@ -5,10 +5,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Exemplo de par (texto original, texto editado) usado como referência pela
- * busca vetorial (RAG) ao avaliar uma nova análise.
- */
 public record ExemploRag(
         UUID id,
         String textoOriginal,
@@ -32,9 +28,8 @@ public record ExemploRag(
         Objects.requireNonNull(criadoEm, "criadoEm não pode ser nulo");
     }
 
-    // equals/hashCode/toString sobrescritos manualmente: o equals gerado pelo
-    // record compara o array de embedding por referência, não por conteúdo.
     @Override
+    // O equals gerado pelo record compararia o float[] por referência.
     public boolean equals(Object o) {
         if (this == o) {
             return true;

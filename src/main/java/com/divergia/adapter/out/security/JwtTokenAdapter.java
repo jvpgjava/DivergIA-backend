@@ -17,12 +17,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
-/**
- * Emissão e validação de tokens de acesso (JWT), assinados com HMAC-SHA256.
- * A chave de assinatura vem de {@code JWT_SECRET} (variável de ambiente) e
- * precisa ter ao menos 32 caracteres — {@link Keys#hmacShaKeyFor} rejeita
- * chaves mais curtas para HS256.
- */
 @Component
 @EnableConfigurationProperties(JwtProperties.class)
 public class JwtTokenAdapter implements TokenPort {

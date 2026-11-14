@@ -9,6 +9,7 @@ import com.divergia.domain.service.GeradorDeTokenSeguro;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -16,6 +17,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -49,7 +51,7 @@ class RedefinirSenhaServiceTest {
         Instant agora = Instant.now();
         TokenRecuperacaoSenha token = new TokenRecuperacaoSenha(
                 UUID.randomUUID(), usuarioId, hash, agora, agora.plusSeconds(1800), null);
-        Usuario usuario = new Usuario(usuarioId, "Ana", "ana@example.com", "hash-antigo", agora);
+        Usuario usuario = new Usuario(usuarioId, "Ana", "ana@example.com", "hash-antigo", agora, null);
 
         given(tokenRepository.buscarPorHash(hash)).willReturn(Optional.of(token));
         given(usuarioRepository.buscarPorId(usuarioId)).willReturn(Optional.of(usuario));
@@ -59,6 +61,29 @@ class RedefinirSenhaServiceTest {
 
         verify(usuarioRepository).salvar(any(Usuario.class));
         verify(tokenRepository).marcarComoUsado(token.id());
+    }
+
+    @Test
+    void redefinirSenhaDeveManterAFotoEOsDemaisDadosDoUsuario() {
+        String tokenBruto = gerador.gerar();
+        String hash = gerador.hash(tokenBruto);
+        UUID usuarioId = UUID.randomUUID();
+        Instant agora = Instant.now();
+        TokenRecuperacaoSenha token = new TokenRecuperacaoSenha(
+                UUID.randomUUID(), usuarioId, hash, agora, agora.plusSeconds(1800), null);
+        Usuario usuario = new Usuario(
+                usuarioId, "Ana", "ana@example.com", "hash-antigo", agora, "http://localhost/uploads/ana.png");
+
+        given(tokenRepository.buscarPorHash(hash)).willReturn(Optional.of(token));
+        given(usuarioRepository.buscarPorId(usuarioId)).willReturn(Optional.of(usuario));
+        given(passwordEncoder.codificar("novaSenha123")).willReturn("hash-novo");
+
+        service.redefinir(tokenBruto, "novaSenha123");
+
+        ArgumentCaptor<Usuario> salvo = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).salvar(salvo.capture());
+        assertThat(salvo.getValue()).isEqualTo(new Usuario(
+                usuarioId, "Ana", "ana@example.com", "hash-novo", agora, "http://localhost/uploads/ana.png"));
     }
 
     @Test

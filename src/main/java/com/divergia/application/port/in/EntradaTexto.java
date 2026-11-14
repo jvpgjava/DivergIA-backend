@@ -3,11 +3,6 @@ package com.divergia.application.port.in;
 import java.util.Arrays;
 import java.util.Objects;
 
-/**
- * Um dos dois lados de uma análise (original ou editado): texto colado OU
- * arquivo (nunca os dois, nunca nenhum) — o arquivo é extraído pelo caso de
- * uso via {@code ExtracaoDocumentoPort} antes da comparação.
- */
 public record EntradaTexto(String texto, byte[] arquivo, String nomeArquivo) {
 
     public EntradaTexto {
@@ -31,9 +26,8 @@ public record EntradaTexto(String texto, byte[] arquivo, String nomeArquivo) {
         return new EntradaTexto(null, arquivo, nomeArquivo);
     }
 
-    // equals/hashCode sobrescritos manualmente: o gerado pelo record compara
-    // o array de bytes por referência, não por conteúdo.
     @Override
+    // O equals gerado pelo record compararia o byte[] por referência.
     public boolean equals(Object o) {
         if (this == o) {
             return true;

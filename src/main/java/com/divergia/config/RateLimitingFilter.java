@@ -16,12 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Rate limiting em memória (por IP) para login/cadastro (alvo natural de
- * força bruta) e para o endpoint de análise (cada chamada tem custo real de
- * LLM). Em memória porque a infraestrutura deste projeto é uma única
- * instância de VPS, sem Redis/cache distribuído.
- */
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
 
@@ -43,9 +37,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         this.regras = List.of(
                 new Regra("POST", "/api/auth/login", authCapacidade, Duration.ofMinutes(authJanelaMinutos)),
                 new Regra("POST", "/api/auth/cadastro", authCapacidade, Duration.ofMinutes(authJanelaMinutos)),
-                // O código de recuperação agora tem só 6 caracteres (~30 bits de
-                // entropia) em vez do token longo de antes — sem rate limit aqui,
-                // dá pra tentar força bruta contra ele.
+                // O código de recuperação tem só 6 caracteres: sem limite, cabe força bruta.
                 new Regra("POST", "/api/auth/redefinir-senha", authCapacidade, Duration.ofMinutes(authJanelaMinutos)),
                 new Regra("POST", "/api/analises", analiseCapacidade, Duration.ofMinutes(analiseJanelaMinutos)));
     }

@@ -16,13 +16,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * Extrai e valida o JWT do header {@code Authorization: Bearer ...}, checando
- * também a lista de revogação (logout real, mesmo com JWT stateless). Um
- * token ausente/inválido/expirado/revogado simplesmente segue sem
- * autenticação — quem decide se isso é aceitável é o
- * {@code authorizeHttpRequests} do {@link SecurityConfig}.
- */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 

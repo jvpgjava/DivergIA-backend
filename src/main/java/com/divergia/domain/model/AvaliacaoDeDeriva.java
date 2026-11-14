@@ -2,12 +2,6 @@ package com.divergia.domain.model;
 
 import java.util.Objects;
 
-/**
- * Julgamento bruto do LLM sobre um trecho onde a versão editada diverge do
- * texto original — ainda não persistido, e portanto sem {@code id} nem
- * vínculo com uma {@link Analise}. Um caso de uso posterior atribui esses
- * dois dados ao transformar isto em um {@link TrechoDeriva}.
- */
 public record AvaliacaoDeDeriva(
         TipoDesvio tipoDesvio,
         String trechoOriginal,

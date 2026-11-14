@@ -11,10 +11,6 @@ import java.nio.charset.StandardCharsets;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * Integração do adapter contra um servidor HTTP local que imita o
- * microsserviço de extração — nenhuma chamada real acontece no teste/CI.
- */
 class DoclingExtracaoDocumentoAdapterTest {
 
     @Test
@@ -69,7 +65,6 @@ class DoclingExtracaoDocumentoAdapterTest {
 
     @Test
     void deveLancarExcecaoDeDominioQuandoServicoEstaIndisponivel() {
-        // porta em localhost sem nenhum servidor escutando
         DoclingExtracaoDocumentoAdapter adapter = new DoclingExtracaoDocumentoAdapter(
                 new ExtracaoDocumentoProperties("http://localhost:1", 2));
 

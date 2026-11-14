@@ -3,10 +3,6 @@ package com.divergia.domain.model;
 import java.time.YearMonth;
 import java.util.Objects;
 
-/**
- * Agregado de um mês no painel de tendência pessoal: quantas análises e
- * derivas o usuário teve, e a intensidade média das derivas naquele mês.
- */
 public record PontoTendencia(YearMonth mes, long quantidadeAnalises, long quantidadeDerivas, double intensidadeMedia) {
 
     public PontoTendencia {

@@ -4,11 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * Painel de tendência pessoal (RF23–RF24): visão agregada de como as
- * análises de um usuário evoluíram — quantidade, distribuição por tipo de
- * desvio, intensidade média, e evolução mês a mês.
- */
 public record PainelTendencia(
         long totalAnalises,
         long totalDerivas,

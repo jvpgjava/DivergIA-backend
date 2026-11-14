@@ -8,12 +8,6 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Verificação manual contra o serviço de extração REAL rodando em
- * localhost:8000 (não roda em CI/`mvn test` normal). Suba o serviço
- * (extraction-service/README.md) e rode com:
- * {@code ./mvnw test -Dtest=DoclingExtracaoDocumentoManualTest -Dteste.manual=true}
- */
 @EnabledIfSystemProperty(named = "teste.manual", matches = "true")
 class DoclingExtracaoDocumentoManualTest {
 

@@ -12,11 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * Job assíncrono que promove todos os trechos de deriva ainda não promovidos
- * para a base de exemplos compartilhada (RAG) — toda análise contribui,
- * sem opção de opt-out por usuário.
- */
 @Service
 public class PromoverExemplosRagService {
 
@@ -54,8 +49,7 @@ public class PromoverExemplosRagService {
                     trecho.trechoOriginal(), trecho.trechoEditado(), trecho.tipoDesvio(),
                     OrigemExemplo.PROMOVIDO_DE_ANALISE);
         }
-        // mesmo sem a análise (foi excluída), marca como "resolvido" pra não
-        // reprocessar este trecho todo dia.
+        // Marca mesmo sem a análise (já excluída) para não reprocessar o trecho todo dia.
         trechoDerivaRepository.marcarComoPromovidoParaRag(trecho.id());
         return analiseExiste;
     }

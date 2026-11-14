@@ -76,7 +76,6 @@ class ConsentimentoControllerTest {
                 .andExpect(jsonPath("$.manterHistorico").value(true))
                 .andExpect(jsonPath("$.contribuirParaRag").value(true));
 
-        // atualiza de novo, revogando — a leitura deve refletir o mais recente
         mockMvc.perform(put("/api/consentimento")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)

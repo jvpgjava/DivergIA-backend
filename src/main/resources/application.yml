@@ -4,6 +4,11 @@ server:
 spring:
   application:
     name: divergia-backend
+  # Variáveis do arquivo .env na raiz do projeto (chaves de API, banco). Opcional:
+  # sem o arquivo, valem as variáveis de ambiente do sistema e os padrões abaixo.
+  # Em produção (systemd) as variáveis vêm do EnvironmentFile, como antes.
+  config:
+    import: optional:file:.env[.properties]
   threads:
     virtual:
       enabled: true
@@ -42,6 +47,13 @@ divergia:
     base-url: ${ABACUS_BASE_URL:https://routellm.abacus.ai/v1}
     api-key: ${ABACUS_API_KEY:}
     model-name: ${ABACUS_MODEL_NAME:claude-sonnet-5}
+    timeout-segundos: ${LLM_TIMEOUT_SEGUNDOS:90}
+    max-tentativas: ${LLM_MAX_TENTATIVAS:2}
+    # Análise e juiz: 0.0 (estável, literal). Reescrita: 0.5 (as 3 alternativas variam).
+    temperatura-analise: ${LLM_TEMPERATURA_ANALISE:0.0}
+    temperatura-reescrita: ${LLM_TEMPERATURA_REESCRITA:0.5}
+    # false se o provedor/modelo recusar o parâmetro "temperature".
+    enviar-temperatura: ${LLM_ENVIAR_TEMPERATURA:true}
   embedding:
     base-url: ${GEMINI_BASE_URL:}
     api-key: ${GOOGLE_API_KEY:}
@@ -61,6 +73,16 @@ divergia:
       janela-minutos: 1
   analise:
     quantidade-exemplos-rag: 5
+    # Limite por texto (o app usa o mesmo). Vale também para texto extraído de arquivo.
+    maximo-caracteres: ${ANALISE_MAXIMO_CARACTERES:10000}
+  ia:
+    triagem:
+      # A triagem do modelo só recusa a entrada (idiomas diferentes, sem relação...)
+      # com pelo menos esta confiança; abaixo disso, a análise segue com as guardas de saída.
+      confianca-minima: ${IA_TRIAGEM_CONFIANCA_MINIMA:0.7}
+    juiz-fidelidade:
+      # Confere com o modelo se cada reescrita sugerida é fiel ao original (1 chamada a mais).
+      habilitado: ${IA_JUIZ_FIDELIDADE_HABILITADO:true}
   extracao:
     base-url: ${EXTRACAO_BASE_URL:http://localhost:8000}
     timeout-segundos: ${EXTRACAO_TIMEOUT_SEGUNDOS:30}

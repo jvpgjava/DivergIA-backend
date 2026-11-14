@@ -5,6 +5,7 @@ import com.divergia.application.port.out.ExtracaoDocumentoPort;
 import com.divergia.application.port.out.LlmPort;
 import com.divergia.application.port.out.VectorStorePort;
 import com.divergia.domain.model.AvaliacaoDeDeriva;
+import static com.divergia.testutil.Modelos.modelo;
 import com.divergia.domain.model.TipoDesvio;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -37,11 +38,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fluxo completo de análise (Fase 5) contra o Postgres real. LLM, base
- * vetorial e extração de documento são mockados — nenhuma chamada de rede
- * real acontece no teste/CI.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -87,7 +83,7 @@ class AnaliseControllerTest {
 
         given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
         given(llmPort.avaliarDerivas(eq("o prazo foi adiado em uma semana"), eq("o prazo foi cancelado"), any()))
-                .willReturn(List.of(new AvaliacaoDeDeriva(
+                .willReturn(modelo(new AvaliacaoDeDeriva(
                         TipoDesvio.SENTIDO, "o prazo foi adiado em uma semana", "o prazo foi cancelado",
                         "a edição mudou completamente o sentido da informação original", 0.9)));
 
@@ -114,7 +110,7 @@ class AnaliseControllerTest {
                 .willReturn("texto extraído do arquivo pdf");
         given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
         given(llmPort.avaliarDerivas(eq("texto extraído do arquivo pdf"), eq("versão editada colada"), any()))
-                .willReturn(List.of(new AvaliacaoDeDeriva(
+                .willReturn(modelo(new AvaliacaoDeDeriva(
                         TipoDesvio.POSICAO, "texto extraído do arquivo pdf", "versão editada colada",
                         "a posição da informação principal foi alterada", 0.6)));
 
@@ -133,8 +129,8 @@ class AnaliseControllerTest {
     @Test
     void deveRejeitarAnaliseSemToken() throws Exception {
         mockMvc.perform(multipart("/api/analises")
-                        .param("textoOriginal", "original")
-                        .param("textoEditado", "editado"))
+                        .param("textoOriginal", "a reunião foi marcada para segunda de manhã")
+                        .param("textoEditado", "a reunião talvez aconteça na segunda"))
                 .andExpect(result -> {
                     int sc = result.getResponse().getStatus();
                     if (sc != 401 && sc != 403) {
@@ -148,9 +144,27 @@ class AnaliseControllerTest {
         String token = cadastrarELogar("analise-invalida+" + UUID.randomUUID() + "@example.com");
 
         mockMvc.perform(multipart("/api/analises")
-                        .param("textoEditado", "editado")
+                        .param("textoEditado", "a reunião talvez aconteça na segunda")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.codigo").value("TEXTO_VAZIO"))
+                .andExpect(jsonPath("$.campo").value("ORIGINAL"));
+    }
+
+    @Test
+    void deveRecusarComCodigoECampoQuandoOTextoForBinarioSemChamarOModelo() throws Exception {
+        String token = cadastrarELogar("analise-binario+" + UUID.randomUUID() + "@example.com");
+
+        mockMvc.perform(multipart("/api/analises")
+                        .param("textoOriginal", "a reunião foi marcada para segunda de manhã")
+                        .param("textoEditado", "01101111 01101100 01100001 00100000 01101101 01110101 01101110 01100100 01101111")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.codigo").value("CONTEUDO_CODIFICADO"))
+                .andExpect(jsonPath("$.campo").value("EDITADO"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("texto editado")));
+
+        then(llmPort).shouldHaveNoInteractions();
     }
 
     @Test
@@ -162,8 +176,8 @@ class AnaliseControllerTest {
                 .willThrow(new RuntimeException("detalhe interno sensível que não deve aparecer na resposta"));
 
         mockMvc.perform(multipart("/api/analises")
-                        .param("textoOriginal", "original")
-                        .param("textoEditado", "editado")
+                        .param("textoOriginal", "a reunião foi marcada para segunda de manhã")
+                        .param("textoEditado", "a reunião talvez aconteça na segunda")
                         .param("manterHistorico", "true")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isInternalServerError())
@@ -179,7 +193,7 @@ class AnaliseControllerTest {
 
         given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
         given(llmPort.avaliarDerivas(eq("o prazo é de dois anos"), eq("o prazo é rápido"), any()))
-                .willReturn(List.of(new AvaliacaoDeDeriva(
+                .willReturn(modelo(new AvaliacaoDeDeriva(
                         TipoDesvio.SENTIDO, "o prazo é de dois anos", "o prazo é rápido",
                         "prazo específico virou vago", 0.8)));
 
@@ -214,7 +228,7 @@ class AnaliseControllerTest {
 
         given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
         given(llmPort.avaliarDerivas(eq("o prazo é de dois anos"), eq("o prazo é rápido"), any()))
-                .willReturn(List.of(new AvaliacaoDeDeriva(
+                .willReturn(modelo(new AvaliacaoDeDeriva(
                         TipoDesvio.SENTIDO, "o prazo é de dois anos", "o prazo é rápido",
                         "prazo específico virou vago", 0.8)));
 
@@ -253,12 +267,12 @@ class AnaliseControllerTest {
 
         given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
         given(llmPort.avaliarDerivas(anyString(), anyString(), any()))
-                .willReturn(List.of(new AvaliacaoDeDeriva(
-                        TipoDesvio.INTENSIDADE, "original", "editado", "explicacao", 0.5)));
+                .willReturn(modelo(new AvaliacaoDeDeriva(
+                        TipoDesvio.INTENSIDADE, "a reunião foi marcada para segunda de manhã", "a reunião talvez aconteça na segunda", "explicacao", 0.5)));
 
         String corpoAnalise = mockMvc.perform(multipart("/api/analises")
-                        .param("textoOriginal", "original")
-                        .param("textoEditado", "editado")
+                        .param("textoOriginal", "a reunião foi marcada para segunda de manhã")
+                        .param("textoEditado", "a reunião talvez aconteça na segunda")
                         .param("manterHistorico", "true")
                         .header("Authorization", "Bearer " + tokenDono))
                 .andExpect(status().isCreated())

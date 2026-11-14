@@ -18,9 +18,19 @@ public record Usuario(UUID id, String nome, String email, String senhaHash, Inst
         Objects.requireNonNull(criadoEm, "criadoEm não pode ser nulo");
     }
 
-    /** @deprecated use o construtor com {@code fotoUrl} — mantido para não quebrar quem ainda não define foto. */
-    @Deprecated
-    public Usuario(UUID id, String nome, String email, String senhaHash, Instant criadoEm) {
-        this(id, nome, email, senhaHash, criadoEm, null);
+    public static Usuario novo(String nome, String email, String senhaHash) {
+        return new Usuario(UUID.randomUUID(), nome, email, senhaHash, Instant.now(), null);
+    }
+
+    public Usuario comEmail(String novoEmail) {
+        return new Usuario(id, nome, novoEmail, senhaHash, criadoEm, fotoUrl);
+    }
+
+    public Usuario comSenhaHash(String novoSenhaHash) {
+        return new Usuario(id, nome, email, novoSenhaHash, criadoEm, fotoUrl);
+    }
+
+    public Usuario comFotoUrl(String novaFotoUrl) {
+        return new Usuario(id, nome, email, senhaHash, criadoEm, novaFotoUrl);
     }
 }

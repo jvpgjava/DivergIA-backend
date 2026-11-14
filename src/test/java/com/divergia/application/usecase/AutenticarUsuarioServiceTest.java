@@ -41,7 +41,7 @@ class AutenticarUsuarioServiceTest {
     @Test
     void deveAutenticarERetornarTokenQuandoCredenciaisCorretas() {
         UUID usuarioId = UUID.randomUUID();
-        Usuario usuario = new Usuario(usuarioId, "Ana", "ana@example.com", "hash", Instant.now());
+        Usuario usuario = new Usuario(usuarioId, "Ana", "ana@example.com", "hash", Instant.now(), null);
         TokenAcesso tokenEsperado = new TokenAcesso("jwt-valor", "jti-1", usuarioId, Instant.now().plusSeconds(900));
 
         given(usuarioRepository.buscarPorEmail("ana@example.com")).willReturn(Optional.of(usuario));
@@ -63,7 +63,7 @@ class AutenticarUsuarioServiceTest {
 
     @Test
     void deveLancarExcecaoQuandoSenhaIncorreta() {
-        Usuario usuario = new Usuario(UUID.randomUUID(), "Ana", "ana@example.com", "hash", Instant.now());
+        Usuario usuario = new Usuario(UUID.randomUUID(), "Ana", "ana@example.com", "hash", Instant.now(), null);
         given(usuarioRepository.buscarPorEmail("ana@example.com")).willReturn(Optional.of(usuario));
         given(passwordEncoder.confere("senha-errada", "hash")).willReturn(false);
 

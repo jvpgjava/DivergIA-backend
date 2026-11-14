@@ -45,12 +45,6 @@ class EmailAdapterTest {
         return new MimeMessage(Session.getDefaultInstance(new Properties()));
     }
 
-    /**
-     * A logo embutida por Content-ID força a mensagem a ser multipart/related
-     * — {@code getContent()} não devolve mais a {@code String} do HTML
-     * diretamente, precisa procurar a parte {@code text/html} dentro do
-     * multipart.
-     */
     private String extrairHtml(MimeMessage mensagem) throws Exception {
         String html = procurarParte(mensagem, "text/html");
         assertThat(html).isNotNull();
@@ -61,12 +55,6 @@ class EmailAdapterTest {
         return procurarParte(mensagem, "image/png") != null;
     }
 
-    /**
-     * A logo embutida por Content-ID faz o `MimeMessageHelper` montar uma
-     * estrutura multipart aninhada (ex: multipart/mixed contendo um
-     * multipart/related com o HTML + a imagem) — percorre recursivamente em
-     * vez de assumir um nível fixo de aninhamento.
-     */
     private String procurarParte(Part parte, String mimeType) throws Exception {
         if (parte.isMimeType(mimeType)) {
             Object conteudo = parte.getContent();
@@ -90,17 +78,11 @@ class EmailAdapterTest {
         given(mailSender.createMimeMessage()).willReturn(mimeMessage);
 
         adapter.enviarRecuperacaoSenha("ana@example.com", "ABC123");
-        // sem isso os content-types das partes internas do multipart ainda não
-        // foram computados (o mock nunca chama send() de verdade, que é quem
-        // normalmente dispara isso) — toda parte reporta "text/plain" até aqui.
         mimeMessage.saveChanges();
 
         verify(mailSender).send(mimeMessage);
         assertThat(mimeMessage.getSubject()).isEqualTo("Recuperação de senha — DivergIA");
         String html = extrairHtml(mimeMessage);
-        // o e-mail espaça cada caractere do token ("A B C 1 2 3") pra
-        // centralizar de forma confiável em qualquer cliente — ver
-        // `EmailAdapter.espacarCaracteres`.
         assertThat(html).contains("A B C 1 2 3");
         assertThat(html).contains("30");
         assertThat(temLogoEmbutida(mimeMessage)).isTrue();

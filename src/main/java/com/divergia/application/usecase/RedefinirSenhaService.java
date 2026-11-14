@@ -38,9 +38,7 @@ public class RedefinirSenhaService implements RedefinirSenhaUseCase {
         Usuario usuario = usuarioRepository.buscarPorId(token.usuarioId())
                 .orElseThrow(TokenInvalidoOuExpiradoException::new);
 
-        Usuario atualizado = new Usuario(
-                usuario.id(), usuario.nome(), usuario.email(),
-                passwordEncoder.codificar(novaSenha), usuario.criadoEm());
+        Usuario atualizado = usuario.comSenhaHash(passwordEncoder.codificar(novaSenha));
 
         usuarioRepository.salvar(atualizado);
         tokenRepository.marcarComoUsado(token.id());

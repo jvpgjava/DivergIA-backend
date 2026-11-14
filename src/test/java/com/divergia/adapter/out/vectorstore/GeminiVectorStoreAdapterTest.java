@@ -23,12 +23,6 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integração do adapter de vetor contra um servidor HTTP local que imita o
- * endpoint {@code embedContent} do Gemini — nenhuma chamada bate na API real
- * durante o teste/CI. A busca por similaridade roda contra o Postgres/pgvector
- * real (ver seção de Infraestrutura do README).
- */
 @SpringBootTest
 @Transactional
 class GeminiVectorStoreAdapterTest {
