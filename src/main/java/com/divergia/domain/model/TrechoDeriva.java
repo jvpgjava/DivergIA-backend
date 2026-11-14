@@ -3,10 +3,6 @@ package com.divergia.domain.model;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Um trecho específico dentro de uma {@link Analise} onde foi detectada
- * deriva de sentido, posição ou intensidade em relação ao texto original.
- */
 public record TrechoDeriva(
         UUID id,
         UUID analiseId,
@@ -36,10 +32,6 @@ public record TrechoDeriva(
         }
     }
 
-    /**
-     * Construtor de compatibilidade sem {@code sugestaoAceita} — usado pelos
-     * (muitos) pontos do código que ainda não lidam com sugestão aceita.
-     */
     public TrechoDeriva(
             UUID id,
             UUID analiseId,
@@ -52,5 +44,11 @@ public record TrechoDeriva(
         this(
                 id, analiseId, trechoOriginal, trechoEditado, tipoDesvio, explicacao, intensidade,
                 promovidoParaRag, null);
+    }
+
+    public TrechoDeriva comSugestaoAceita(String texto) {
+        return new TrechoDeriva(
+                id, analiseId, trechoOriginal, trechoEditado, tipoDesvio, explicacao, intensidade,
+                promovidoParaRag, texto);
     }
 }

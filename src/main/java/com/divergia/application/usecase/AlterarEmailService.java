@@ -28,8 +28,7 @@ public class AlterarEmailService implements AlterarEmailUseCase {
         if (!usuario.email().equalsIgnoreCase(novoEmail) && usuarioRepository.existeComEmail(novoEmail)) {
             throw new EmailJaCadastradoException(novoEmail);
         }
-        Usuario atualizado = new Usuario(
-                usuario.id(), usuario.nome(), novoEmail, usuario.senhaHash(), usuario.criadoEm(), usuario.fotoUrl());
+        Usuario atualizado = usuario.comEmail(novoEmail);
         return usuarioRepository.salvar(atualizado);
     }
 }

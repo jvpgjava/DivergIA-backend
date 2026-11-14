@@ -8,6 +8,10 @@ import com.divergia.application.port.in.AnalisarTextoUseCase;
 import com.divergia.application.port.in.EntradaAnalise;
 import com.divergia.application.port.in.EntradaTexto;
 import com.divergia.application.port.in.SugerirReescritaUseCase;
+import com.divergia.application.usecase.EntradaInvalidaException;
+import com.divergia.domain.model.CampoEntrada;
+import com.divergia.domain.model.MotivoEntradaInvalida;
+import com.divergia.domain.model.ProblemaDeEntrada;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -55,8 +59,8 @@ public class AnaliseController {
             @RequestParam(required = false) MultipartFile arquivoEditado,
             @RequestParam(defaultValue = "false") boolean manterHistorico) {
 
-        EntradaTexto original = paraEntradaTexto(textoOriginal, arquivoOriginal);
-        EntradaTexto editado = paraEntradaTexto(textoEditado, arquivoEditado);
+        EntradaTexto original = paraEntradaTexto(textoOriginal, arquivoOriginal, CampoEntrada.ORIGINAL);
+        EntradaTexto editado = paraEntradaTexto(textoEditado, arquivoEditado, CampoEntrada.EDITADO);
 
         return ResultadoAnaliseResponse.from(
                 analisarTexto.analisar(new EntradaAnalise(usuarioId, original, editado, manterHistorico)));
@@ -77,8 +81,11 @@ public class AnaliseController {
         aceitarSugestaoReescrita.aceitar(usuarioId, trechoId, request.texto());
     }
 
-    private EntradaTexto paraEntradaTexto(String texto, MultipartFile arquivo) {
+    private EntradaTexto paraEntradaTexto(String texto, MultipartFile arquivo, CampoEntrada campo) {
         if (arquivo == null || arquivo.isEmpty()) {
+            if (texto == null || texto.isBlank()) {
+                throw new EntradaInvalidaException(ProblemaDeEntrada.de(MotivoEntradaInvalida.TEXTO_VAZIO, campo));
+            }
             return EntradaTexto.deTexto(texto);
         }
         try {

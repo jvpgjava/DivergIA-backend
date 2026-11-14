@@ -7,18 +7,25 @@ import com.divergia.application.port.out.AnaliseRepositoryPort;
 import com.divergia.application.port.out.ExtracaoDocumentoPort;
 import com.divergia.application.port.out.LlmPort;
 import com.divergia.application.port.out.TrechoDerivaRepositoryPort;
-import com.divergia.application.port.out.VectorStorePort;
 import com.divergia.domain.model.Analise;
 import com.divergia.domain.model.AvaliacaoDeDeriva;
-import com.divergia.domain.model.ExemploRag;
+import com.divergia.domain.model.AvaliacaoDoModelo;
+import com.divergia.domain.model.CampoEntrada;
+import com.divergia.domain.model.MotivoEntradaInvalida;
+import com.divergia.domain.model.ProblemaDeEntrada;
 import com.divergia.domain.model.ResultadoAnalise;
 import com.divergia.domain.model.TrechoDeriva;
+import com.divergia.domain.model.TriagemDaEntrada;
+import com.divergia.domain.service.DetectorDeIdioma;
+import com.divergia.domain.service.GuardaDeDerivas;
+import com.divergia.domain.service.NormalizadorDeTexto;
 import com.divergia.domain.service.PoliticaRetencaoDeTexto;
+import com.divergia.domain.service.ValidadorDeEntrada;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionOperations;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,45 +38,94 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
     private static final Logger log = LoggerFactory.getLogger(AnalisarTextoService.class);
 
     private final ExtracaoDocumentoPort extracaoDocumentoPort;
-    private final VectorStorePort vectorStorePort;
+    private final BuscadorDeExemplosRag buscadorDeExemplos;
     private final LlmPort llmPort;
     private final AnaliseRepositoryPort analiseRepository;
     private final TrechoDerivaRepositoryPort trechoDerivaRepository;
+    private final TransactionOperations transacao;
     private final PoliticaRetencaoDeTexto politicaRetencao = new PoliticaRetencaoDeTexto();
-    private final int quantidadeExemplosRag;
+    private final GuardaDeDerivas guardaDeDerivas = new GuardaDeDerivas();
+    private final ValidadorDeEntrada validador;
+    private final double confiancaMinimaTriagem;
 
     public AnalisarTextoService(
             ExtracaoDocumentoPort extracaoDocumentoPort,
-            VectorStorePort vectorStorePort,
+            BuscadorDeExemplosRag buscadorDeExemplos,
             LlmPort llmPort,
             AnaliseRepositoryPort analiseRepository,
             TrechoDerivaRepositoryPort trechoDerivaRepository,
-            @Value("${divergia.analise.quantidade-exemplos-rag:5}") int quantidadeExemplosRag) {
+            TransactionOperations transacao,
+            @Value("${divergia.analise.maximo-caracteres:10000}") int maximoCaracteres,
+            @Value("${divergia.ia.triagem.confianca-minima:0.7}") double confiancaMinimaTriagem) {
         this.extracaoDocumentoPort = extracaoDocumentoPort;
-        this.vectorStorePort = vectorStorePort;
+        this.buscadorDeExemplos = buscadorDeExemplos;
         this.llmPort = llmPort;
         this.analiseRepository = analiseRepository;
         this.trechoDerivaRepository = trechoDerivaRepository;
-        this.quantidadeExemplosRag = quantidadeExemplosRag;
+        this.transacao = transacao;
+        this.validador = new ValidadorDeEntrada(maximoCaracteres);
+        this.confiancaMinimaTriagem = confiancaMinimaTriagem;
     }
 
     @Override
-    @Transactional
     public ResultadoAnalise analisar(EntradaAnalise entrada) {
-        String textoOriginal = resolverTexto(entrada.original());
-        String textoEditado = resolverTexto(entrada.editado());
+        String textoOriginal = NormalizadorDeTexto.limpar(resolverTexto(entrada.original()));
+        String textoEditado = NormalizadorDeTexto.limpar(resolverTexto(entrada.editado()));
 
-        List<AvaliacaoDeDeriva> avaliacoes = llmPort.avaliarDerivas(
-                textoOriginal, textoEditado, buscarExemplosRag(textoOriginal, textoEditado));
+        validarEntrada(entrada, textoOriginal, textoEditado);
 
+        List<AvaliacaoDeDeriva> derivas;
+        if (NormalizadorDeTexto.identicos(textoOriginal, textoEditado)) {
+            derivas = List.of();
+        } else {
+            derivas = avaliarComGuardas(textoOriginal, textoEditado);
+        }
+
+        // A chamada ao modelo fica fora da transação para não prender uma conexão do pool por dezenas de segundos.
+        return transacao.execute(status -> persistir(entrada, textoOriginal, textoEditado, derivas));
+    }
+
+    private void validarEntrada(EntradaAnalise entrada, String textoOriginal, String textoEditado) {
+        validador.validarLado(textoOriginal, CampoEntrada.ORIGINAL, entrada.original().ehArquivo())
+                .ifPresent(this::recusar);
+        validador.validarLado(textoEditado, CampoEntrada.EDITADO, entrada.editado().ehArquivo())
+                .ifPresent(this::recusar);
+        validador.validarPar(textoOriginal, textoEditado).ifPresent(this::recusar);
+    }
+
+    private List<AvaliacaoDeDeriva> avaliarComGuardas(String textoOriginal, String textoEditado) {
+        AvaliacaoDoModelo avaliacao = llmPort.avaliarDerivas(
+                textoOriginal, textoEditado, buscadorDeExemplos.buscar(textoOriginal, textoEditado));
+
+        TriagemDaEntrada triagem = avaliacao.triagem();
+        if (!triagem.ehValida()) {
+            // Com baixa confiança a análise segue: as guardas de saída ainda filtram o resultado.
+            if (triagem.confianca() >= confiancaMinimaTriagem) {
+                log.info("Análise recusada pela triagem do modelo: motivo={} campo={} confianca={}",
+                        triagem.motivo(), triagem.campo(), triagem.confianca());
+                recusar(problemaDaTriagem(triagem));
+            }
+            log.info("Triagem do modelo com baixa confiança ignorada: motivo={} confianca={}",
+                    triagem.motivo(), triagem.confianca());
+        }
+
+        GuardaDeDerivas.Resultado resultado = guardaDeDerivas.filtrar(textoOriginal, textoEditado, avaliacao.derivas());
+        if (resultado.totalDescartado() > 0 || resultado.explicacoesTrocadas() > 0) {
+            log.info("Guarda de saída: {} aprovadas, descartes={}, explicacoes trocadas={}",
+                    resultado.aprovadas().size(), resultado.descartes(), resultado.explicacoesTrocadas());
+        }
+        return resultado.aprovadas();
+    }
+
+    private ResultadoAnalise persistir(
+            EntradaAnalise entrada, String textoOriginal, String textoEditado, List<AvaliacaoDeDeriva> derivas) {
         Analise analiseBruta = new Analise(
                 UUID.randomUUID(), entrada.usuarioId(), textoOriginal, textoEditado,
                 entrada.manterHistorico(), Instant.now());
-        Analise analiseParaPersistir = politicaRetencao.aplicar(analiseBruta);
-        Analise analiseSalva = analiseRepository.salvar(analiseParaPersistir);
+        Analise analiseSalva = analiseRepository.salvar(politicaRetencao.aplicar(analiseBruta));
 
         List<TrechoDeriva> trechos = new ArrayList<>();
-        for (AvaliacaoDeDeriva avaliacao : avaliacoes) {
+        for (AvaliacaoDeDeriva avaliacao : derivas) {
             TrechoDeriva trecho = new TrechoDeriva(
                     UUID.randomUUID(),
                     analiseSalva.id(),
@@ -79,13 +135,22 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
                     avaliacao.explicacao(),
                     avaliacao.intensidade(),
                     false);
-            // Os trechos citam texto bruto (original/editado) — mesma regra de
-            // retenção da Analise: só persiste se houve consentimento. Ainda
-            // assim aparecem no resultado devolvido nesta chamada.
+            // Os trechos citam texto bruto, então seguem a mesma regra de retenção da análise.
             trechos.add(entrada.manterHistorico() ? trechoDerivaRepository.salvar(trecho) : trecho);
         }
-
         return new ResultadoAnalise(analiseSalva, trechos);
+    }
+
+    private static ProblemaDeEntrada problemaDaTriagem(TriagemDaEntrada triagem) {
+        if (triagem.motivo() == MotivoEntradaInvalida.IDIOMAS_DIFERENTES) {
+            return ProblemaDeEntrada.idiomasDiferentes(
+                    DetectorDeIdioma.nome(triagem.idiomaOriginal()), DetectorDeIdioma.nome(triagem.idiomaEditado()));
+        }
+        return ProblemaDeEntrada.de(triagem.motivo(), triagem.campo());
+    }
+
+    private void recusar(ProblemaDeEntrada problema) {
+        throw new EntradaInvalidaException(problema);
     }
 
     private String resolverTexto(EntradaTexto entradaTexto) {
@@ -93,14 +158,5 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
             return extracaoDocumentoPort.extrairTexto(entradaTexto.arquivo(), entradaTexto.nomeArquivo());
         }
         return entradaTexto.texto();
-    }
-
-    private List<ExemploRag> buscarExemplosRag(String textoOriginal, String textoEditado) {
-        try {
-            return vectorStorePort.buscarSimilares(textoOriginal + "\n" + textoEditado, quantidadeExemplosRag);
-        } catch (Exception e) {
-            log.warn("Falha ao buscar exemplos de RAG, prosseguindo sem eles: {}", e.getMessage());
-            return List.of();
-        }
     }
 }

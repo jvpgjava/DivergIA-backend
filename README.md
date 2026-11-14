@@ -190,6 +190,54 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 Detalhes por sistema operacional (Linux/Windows) em [`INSTALL.md`](INSTALL.md).
 
+## Arquivo `.env` (chaves de API e banco)
+
+```bash
+cp .env.example .env   # e preencha ABACUS_API_KEY (e GOOGLE_API_KEY, opcional)
+```
+
+O Spring lê o `.env` sozinho ao subir (`spring.config.import` em
+`application.yml`); ele está no `.gitignore` e nunca vai para o repositório.
+Sem `ABACUS_API_KEY`, a aplicação sobe, mas análise e reescrita respondem
+`502` com uma mensagem clara (e um aviso aparece no log na subida). Sem
+`GOOGLE_API_KEY`, a análise funciona sem os exemplos do RAG.
+
+Para usar o superusuário local do Postgres em desenvolvimento, o `.env.example`
+já traz `DB_USERNAME=postgres` / `DB_PASSWORD=postgres`. Não defina `DB_URL`
+no `.env`: os testes usariam o banco de desenvolvimento em vez do `divergia_test`.
+
+## IA: guardas contra alucinação e entrada inválida
+
+A análise segue o mesmo desenho em camadas do chat do CesucaCode
+(guarda de entrada → modelo → guarda de saída), adaptado à tarefa do DivergIA:
+
+| Camada | Onde | O que faz |
+|---|---|---|
+| Limpeza | `NormalizadorDeTexto` | remove caracteres invisíveis (usados para esconder instruções), unifica Unicode e espaços |
+| Guarda de entrada L0 (sem custo) | `ValidadorDeEntrada` | recusa, sem chamar o modelo: vazio, curto, longo, binário/hex/base64, só números ou símbolos, lixo de teclado, instrução para a IA, só ofensa, idiomas diferentes |
+| Atalho | `AnalisarTextoService` | textos idênticos → nenhuma deriva, sem chamar o modelo |
+| Triagem L1 (no modelo) | prompt `40-triagem…` | o que só dá para decidir lendo: assuntos sem relação, sentido disfarçado, idiomas em texto curto. Só recusa com confiança ≥ `IA_TRIAGEM_CONFIANCA_MINIMA` |
+| Saída estruturada | `AbacusLlmAdapter` + `RespostaDoModelo` | regras no system prompt, dados entre tags na mensagem do usuário, JSON validado e **uma** tentativa de reparo se vier fora do formato |
+| Guarda de saída | `GuardaDeDerivas` | **toda citação precisa existir no texto do usuário** (citação inventada = descartada); trecho ancorado na forma exata do texto; descarta "deriva" sem mudança real; explicação que fala do funcionamento interno ou traz ofensa nova é trocada por uma montada só com as citações |
+| Reescrita | `GuardaDeSugestoes` + juiz | descarta cópia da deriva, outro idioma, metacomentário, ofensa nova; um juiz LLM confere a fidelidade de cada alternativa (falhou → segue só com a guarda); nada fiel → `503` em vez de uma reescrita que muda o sentido de novo |
+
+Recusas de entrada respondem **`422`** com `codigo` (ex.: `IDIOMAS_DIFERENTES`)
+e `campo` (`ORIGINAL`, `EDITADO`, `AMBOS`), que o app usa para marcar o campo
+certo. Palavrão num texto real **não** é recusado: suavizá-lo é justamente uma
+deriva de intensidade.
+
+Os prompts ficam em `src/main/resources/prompts/<tarefa>/*.md`, um arquivo por
+assunto, concatenados em ordem alfabética.
+
+**Testes.** As guardas têm suíte de regressão própria, rodando em todo
+`./mvnw test` (`ValidadorDeEntradaTest`, `GuardaDeDerivasTest`,
+`GuardaDeSugestoesTest`, `AbacusLlmAdapterUnitTest`...). Contra o modelo
+**real** (custa chamadas de API; precisa da chave no `.env`):
+
+```bash
+./mvnw test -Dtest=GuardrailsIaManualTest -Dteste.manual=true
+```
+
 ## Variáveis de ambiente
 
 | Variável      | Uso                   | Default no perfil `dev`                     |

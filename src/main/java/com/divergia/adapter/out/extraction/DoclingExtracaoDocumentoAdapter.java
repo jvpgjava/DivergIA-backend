@@ -13,11 +13,6 @@ import org.springframework.web.client.RestClientException;
 
 import java.time.Duration;
 
-/**
- * Chama o microsserviço Python de extração de documento (FastAPI + Docling)
- * via HTTP. Único adapter autorizado a conhecer o contrato desse serviço
- * (rota, formato de request/response).
- */
 @Component
 @EnableConfigurationProperties(ExtracaoDocumentoProperties.class)
 public class DoclingExtracaoDocumentoAdapter implements ExtracaoDocumentoPort {

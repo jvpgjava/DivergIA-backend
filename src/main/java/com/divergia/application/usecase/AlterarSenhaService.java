@@ -25,13 +25,7 @@ public class AlterarSenhaService implements AlterarSenhaUseCase {
         if (!passwordEncoder.confere(senhaAtual, usuario.senhaHash())) {
             throw new CredenciaisInvalidasException();
         }
-        Usuario atualizado = new Usuario(
-                usuario.id(),
-                usuario.nome(),
-                usuario.email(),
-                passwordEncoder.codificar(novaSenha),
-                usuario.criadoEm(),
-                usuario.fotoUrl());
+        Usuario atualizado = usuario.comSenhaHash(passwordEncoder.codificar(novaSenha));
         usuarioRepository.salvar(atualizado);
     }
 }

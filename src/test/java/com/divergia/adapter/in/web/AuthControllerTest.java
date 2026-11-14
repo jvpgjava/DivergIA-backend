@@ -32,11 +32,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fluxo completo de autenticação (Fase 3) de ponta a ponta contra o Postgres
- * real. O envio de e-mail é mockado (ver {@link EmailPort}) para não
- * depender de SMTP real durante o teste/CI.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -74,7 +69,6 @@ class AuthControllerTest {
         mockMvc.perform(delete("/api/auth/conta").header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
-        // depois de excluída, tentar logar de novo deve falhar (usuário não existe mais)
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new LoginBody(email, "senha12345"))))
@@ -181,7 +175,6 @@ class AuthControllerTest {
                                 new RedefinirSenhaBody(tokenBruto, "senha-nova-456"))))
                 .andExpect(status().isOk());
 
-        // senha antiga não funciona mais, nova funciona
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new LoginBody(email, "senha-antiga-123"))))

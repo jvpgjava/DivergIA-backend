@@ -17,11 +17,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integração do método de sugestão de reescrita contra um servidor HTTP
- * local que imita o formato de resposta OpenAI-compatible — nenhuma chamada
- * bate na API real durante o teste/CI.
- */
 @SpringBootTest
 class AbacusLlmAdapterSugestaoReescritaTest {
 

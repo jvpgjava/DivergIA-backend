@@ -45,7 +45,7 @@ class SolicitarRecuperacaoSenhaServiceTest {
 
     @Test
     void deveGerarTokenPersistirEEnviarEmailQuandoUsuarioExiste() {
-        Usuario usuario = new Usuario(UUID.randomUUID(), "Ana", "ana@example.com", "hash", Instant.now());
+        Usuario usuario = new Usuario(UUID.randomUUID(), "Ana", "ana@example.com", "hash", Instant.now(), null);
         given(usuarioRepository.buscarPorEmail("ana@example.com")).willReturn(Optional.of(usuario));
         given(tokenRepository.salvar(any(TokenRecuperacaoSenha.class))).willAnswer(inv -> inv.getArgument(0));
 

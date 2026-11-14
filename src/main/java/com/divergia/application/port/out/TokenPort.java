@@ -8,8 +8,5 @@ public interface TokenPort {
 
     TokenAcesso gerar(UUID usuarioId);
 
-    /**
-     * @throws IllegalArgumentException se o token for inválido, malformado ou estiver expirado
-     */
     TokenAcesso validar(String tokenBruto);
 }

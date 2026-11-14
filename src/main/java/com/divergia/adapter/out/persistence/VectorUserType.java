@@ -11,11 +11,6 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Arrays;
 
-/**
- * Mapeamento Hibernate para a coluna {@code vector} do pgvector, usando o
- * cliente JDBC oficial {@code com.pgvector:pgvector} (que não traz
- * integração pronta com Hibernate/JPA).
- */
 public class VectorUserType implements UserType<float[]> {
 
     @Override

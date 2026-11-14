@@ -9,8 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.util.UUID;
 
 @Service
 public class CadastrarUsuarioService implements CadastrarUsuarioUseCase {
@@ -33,10 +31,9 @@ public class CadastrarUsuarioService implements CadastrarUsuarioUseCase {
         if (usuarioRepository.existeComEmail(email)) {
             throw new EmailJaCadastradoException(email);
         }
-        Usuario usuario = new Usuario(
-                UUID.randomUUID(), nome, email, passwordEncoder.codificar(senha), Instant.now(), null);
+        Usuario usuario = Usuario.novo(nome, email, passwordEncoder.codificar(senha));
         Usuario salvo = usuarioRepository.salvar(usuario);
-      
+
         try {
             emailPort.enviarBoasVindas(salvo.email(), salvo.nome());
         } catch (Exception e) {

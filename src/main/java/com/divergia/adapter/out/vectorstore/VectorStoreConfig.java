@@ -6,18 +6,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Modelo de embedding usado para popular e consultar a base vetorial de
- * exemplos (RAG). A Abacus.AI/RouteLLM não oferece embeddings — por isso
- * esta chamada vai direto à API do Gemini (Google AI), fonte separada da
- * usada em {@link com.divergia.adapter.out.llm}.
- */
 @Configuration
 @EnableConfigurationProperties(EmbeddingProperties.class)
 public class VectorStoreConfig {
 
     @Bean
     public EmbeddingModel embeddingModel(EmbeddingProperties properties) {
+        // Embeddings vêm do Gemini porque a Abacus.AI/RouteLLM não oferece esse serviço.
         GoogleAiEmbeddingModel.GoogleAiEmbeddingModelBuilder builder = GoogleAiEmbeddingModel.builder()
                 .apiKey(properties.apiKey())
                 .modelName(properties.modelName())

@@ -14,11 +14,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Isola a validação do rate limiting de login/cadastro com uma capacidade
- * bem pequena — o profile {@code test} normalmente usa uma capacidade alta
- * (ver application.yml) para não interferir nos demais testes de fluxo.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 class RateLimitingFilterTest {
@@ -51,8 +46,6 @@ class RateLimitingFilterTest {
 
     @Test
     void deveBloquearAposExcederACapacidadeDeTentativasDeAnalise() throws Exception {
-        // Sem token válido mesmo: o rate limiting roda antes da checagem de
-        // autenticação, então basta bater na rota repetidas vezes.
         mockMvc.perform(multipart("/api/analises").param("textoOriginal", "a").param("textoEditado", "b"))
                 .andExpect(result -> assertNaoEh429(result.getResponse().getStatus()));
         mockMvc.perform(multipart("/api/analises").param("textoOriginal", "a").param("textoEditado", "b"))

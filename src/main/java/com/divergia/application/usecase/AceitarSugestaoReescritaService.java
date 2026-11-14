@@ -29,19 +29,10 @@ public class AceitarSugestaoReescritaService implements AceitarSugestaoReescrita
         Analise analise = analiseRepository.buscarPorId(trecho.analiseId())
                 .orElseThrow(TrechoDerivaNaoEncontradoException::new);
 
-        if (!analise.usuarioId().equals(usuarioId)) {
+        if (!analise.pertenceA(usuarioId)) {
             throw new AcessoNaoAutorizadoException();
         }
 
-        trechoDerivaRepository.salvar(new TrechoDeriva(
-                trecho.id(),
-                trecho.analiseId(),
-                trecho.trechoOriginal(),
-                trecho.trechoEditado(),
-                trecho.tipoDesvio(),
-                trecho.explicacao(),
-                trecho.intensidade(),
-                trecho.promovidoParaRag(),
-                textoEscolhido));
+        trechoDerivaRepository.salvar(trecho.comSugestaoAceita(textoEscolhido));
     }
 }

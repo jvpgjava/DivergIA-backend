@@ -32,7 +32,7 @@ class ObterUsuarioLogadoServiceTest {
     @Test
     void deveDevolverOUsuarioQuandoEleExiste() {
         UUID usuarioId = UUID.randomUUID();
-        Usuario usuario = new Usuario(usuarioId, "Ana Clara", "ana@example.com", "hash", Instant.now());
+        Usuario usuario = new Usuario(usuarioId, "Ana Clara", "ana@example.com", "hash", Instant.now(), null);
         given(usuarioRepository.buscarPorId(usuarioId)).willReturn(Optional.of(usuario));
 
         Usuario resultado = service.obter(usuarioId);

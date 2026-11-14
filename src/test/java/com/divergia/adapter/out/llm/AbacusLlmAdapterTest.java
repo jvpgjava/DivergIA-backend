@@ -18,21 +18,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integração do adapter de LLM contra um servidor HTTP local que imita o
- * formato de resposta OpenAI-compatible da Abacus.AI/RouteLLM — nenhuma
- * chamada bate na API real durante o teste/CI.
- *
- * <p>O conteúdo da resposta do mock é configurável por teste (campo
- * {@code proximaResposta}) de propósito: cada {@code @DynamicPropertySource}
- * distinto cria seu próprio {@code ApplicationContext} (e, por causa dele,
- * seu próprio pool de conexões com o Postgres — ver comentário em
- * {@code application-test.yml}). Um teste extra aqui é uma linha a mais;
- * uma classe extra é um pool a mais, e na suíte inteira isso já bateu num
- * limite de conexões do Postgres em CI. Por isso todo cenário de resposta
- * do LLM deve, na medida do possível, viver nesta mesma classe/contexto em
- * vez de ganhar uma classe de teste própria.
- */
 @SpringBootTest
 class AbacusLlmAdapterTest {
 
@@ -85,7 +70,7 @@ class AbacusLlmAdapterTest {
                 + "\\\"intensidade\\\":0.8}]";
 
         List<AvaliacaoDeDeriva> derivas = adapter.avaliarDerivas(
-                "o produto é bom", "o produto é excepcional", List.of());
+                "o produto é bom", "o produto é excepcional", List.of()).derivas();
 
         assertThat(derivas).hasSize(1);
         AvaliacaoDeDeriva deriva = derivas.get(0);
@@ -95,17 +80,8 @@ class AbacusLlmAdapterTest {
         assertThat(deriva.intensidade()).isEqualTo(0.8);
     }
 
-    /**
-     * Comum quando o texto de entrada é degenerado (só números, dígitos
-     * binários): o LLM às vezes "inventa" uma deriva com campos fora do
-     * esperado em vez de respeitar o array vazio pedido no prompt. Cobre a
-     * resiliência do parser a isso — ver {@link AbacusLlmAdapter#parsear}.
-     */
     @Test
     void deveIgnorarItemComTipoDesvioInvalidoEReescalarIntensidadeForaDeFaixa() {
-        // Três itens: intensidade fora de 0-1 (escala 0-100, deve ser
-        // reescalada), tipoDesvio inexistente (deve ser ignorado) e um item
-        // válido (deve passar sem alteração).
         proximaResposta = "[{\\\"tipoDesvio\\\":\\\"INTENSIDADE\\\",\\\"trechoOriginal\\\":\\\"1010\\\","
                 + "\\\"trechoEditado\\\":\\\"0101\\\",\\\"explicacao\\\":\\\"desvio numerico\\\","
                 + "\\\"intensidade\\\":90},"
@@ -116,7 +92,7 @@ class AbacusLlmAdapterTest {
                 + "\\\"trechoEditado\\\":\\\"o prazo e longo\\\",\\\"explicacao\\\":\\\"desvio valido\\\","
                 + "\\\"intensidade\\\":0.7}]";
 
-        List<AvaliacaoDeDeriva> derivas = adapter.avaliarDerivas("1010", "0101", List.of());
+        List<AvaliacaoDeDeriva> derivas = adapter.avaliarDerivas("1010", "0101", List.of()).derivas();
 
         assertThat(derivas).hasSize(2);
         assertThat(derivas.get(0).tipoDesvio()).isEqualTo(TipoDesvio.INTENSIDADE);

@@ -7,6 +7,8 @@ import com.divergia.application.usecase.AcessoNaoAutorizadoException;
 import com.divergia.application.usecase.AnaliseNaoEncontradaException;
 import com.divergia.application.usecase.CredenciaisInvalidasException;
 import com.divergia.application.usecase.EmailJaCadastradoException;
+import com.divergia.application.usecase.EntradaInvalidaException;
+import com.divergia.application.usecase.SugestaoIndisponivelException;
 import com.divergia.application.usecase.TokenInvalidoOuExpiradoException;
 import com.divergia.application.usecase.TrechoDerivaNaoEncontradoException;
 import com.divergia.application.usecase.UsuarioNaoEncontradoException;
@@ -24,12 +26,6 @@ import org.springframework.web.multipart.MultipartException;
 import java.io.UncheckedIOException;
 import java.util.stream.Collectors;
 
-/**
- * Padroniza o formato de erro de toda a API num único shape ({@link ErroResponse}),
- * em vez de cada controller devolver um corpo diferente. Exceções não
- * mapeadas caem no handler genérico, que loga a stack trace no servidor mas
- * nunca devolve detalhe interno (nem conteúdo de análise) ao cliente.
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -86,7 +82,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(LlmException.class)
     public ResponseEntity<ErroResponse> tratarFalhaDeLlm(LlmException e, HttpServletRequest request) {
         log.warn("Falha ao processar resposta do LLM em {}: {}", request.getRequestURI(), e.getMessage());
-        return responder(HttpStatus.BAD_GATEWAY, "Não foi possível processar a resposta do modelo de linguagem", request);
+        return responder(
+                HttpStatus.BAD_GATEWAY,
+                "A análise não pôde ser concluída agora. Tente novamente em instantes.",
+                request);
+    }
+
+    @ExceptionHandler(EntradaInvalidaException.class)
+    public ResponseEntity<ErroResponse> tratarEntradaInvalida(EntradaInvalidaException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.UNPROCESSABLE_CONTENT;
+        return ResponseEntity.status(status).body(ErroResponse.of(
+                status, e.getMessage(), request.getRequestURI(),
+                e.problema().motivo().name(), e.problema().campo().name()));
+    }
+
+    @ExceptionHandler(SugestaoIndisponivelException.class)
+    public ResponseEntity<ErroResponse> tratarSugestaoIndisponivel(
+            SugestaoIndisponivelException e, HttpServletRequest request) {
+        return responder(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), request);
     }
 
     @ExceptionHandler(UncheckedIOException.class)

@@ -23,8 +23,7 @@ public class AtualizarFotoPerfilService implements AtualizarFotoPerfilUseCase {
     public String atualizar(UUID usuarioId, byte[] conteudo, String extensao) {
         Usuario usuario = usuarioRepository.buscarPorId(usuarioId).orElseThrow(UsuarioNaoEncontradoException::new);
         String url = fotoPerfilPort.salvar(usuarioId, conteudo, extensao);
-        Usuario atualizado = new Usuario(
-                usuario.id(), usuario.nome(), usuario.email(), usuario.senhaHash(), usuario.criadoEm(), url);
+        Usuario atualizado = usuario.comFotoUrl(url);
         usuarioRepository.salvar(atualizado);
         return url;
     }

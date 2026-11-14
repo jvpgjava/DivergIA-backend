@@ -7,11 +7,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.nio.file.Path;
 
-/**
- * Serve os arquivos de {@code divergia.uploads.diretorio} (fotos de perfil,
- * hoje) em {@code /uploads/**} — o mesmo diretório onde
- * {@code FotoPerfilDiscoAdapter} grava.
- */
 @Configuration
 public class UploadsWebConfig implements WebMvcConfigurer {
 

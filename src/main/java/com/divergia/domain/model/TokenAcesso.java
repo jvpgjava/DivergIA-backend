@@ -4,11 +4,6 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Token de acesso (JWT) emitido para um usuário autenticado — representa
- * tanto o token recém-gerado no login quanto o resultado de validar um
- * token recebido numa requisição.
- */
 public record TokenAcesso(String valor, String jti, UUID usuarioId, Instant expiraEm) {
 
     public TokenAcesso {

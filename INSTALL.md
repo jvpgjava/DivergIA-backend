@@ -41,10 +41,22 @@ SQL
 
 1. Baixe o instalador oficial em https://www.postgresql.org/download/windows/
    (EDB installer, PostgreSQL 16.x) e instale normalmente — sem WSL/Docker.
-2. Instale a extensão `pgvector` a partir dos binários pré-compilados do
-   projeto (https://github.com/pgvector/pgvector#windows) ou compile com o
-   `nmake` usando o "x64 Native Tools Command Prompt for VS", seguindo o
-   `README` do próprio projeto pgvector.
+2. Instale a extensão `pgvector` compilando o código oficial com o Visual
+   Studio (Build Tools com "Desenvolvimento para desktop com C++"). Abra o
+   **"x64 Native Tools Command Prompt for VS" como administrador** (a
+   instalação grava na pasta do PostgreSQL) e rode, ajustando `PGROOT` para a
+   pasta da sua instalação:
+
+   ```bat
+   set "PGROOT=C:\Program Files\PostgreSQL\18"
+   cd %TEMP%
+   git clone --branch v0.8.5 https://github.com/pgvector/pgvector.git
+   cd pgvector
+   nmake /F Makefile.win
+   nmake /F Makefile.win install
+   ```
+
+   Confira com `psql -U postgres -c "select * from pg_available_extensions where name='vector'"`.
 3. Usando `psql` (ou pgAdmin), crie usuário e bancos:
 
    ```sql

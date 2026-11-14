@@ -5,6 +5,7 @@ import com.divergia.application.port.out.ExtracaoDocumentoPort;
 import com.divergia.application.port.out.LlmPort;
 import com.divergia.application.port.out.VectorStorePort;
 import com.divergia.domain.model.AvaliacaoDeDeriva;
+import static com.divergia.testutil.Modelos.modelo;
 import com.divergia.domain.model.TipoDesvio;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,11 +33,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Fluxo completo de histórico, tendência e exclusão (Fase 7) de ponta a
- * ponta contra o Postgres real. LLM e base vetorial são mockados — nenhuma
- * chamada de rede real acontece no teste/CI.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -80,7 +76,7 @@ class HistoricoControllerTest {
             throws Exception {
         given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
         given(llmPort.avaliarDerivas(org.mockito.ArgumentMatchers.eq(original), org.mockito.ArgumentMatchers.eq(editado), any()))
-                .willReturn(List.of(new AvaliacaoDeDeriva(tipo, original, editado, "explicacao de teste", intensidade)));
+                .willReturn(modelo(new AvaliacaoDeDeriva(tipo, original, editado, "explicacao de teste", intensidade)));
 
         String corpo = mockMvc.perform(multipart("/api/analises")
                         .param("textoOriginal", original)
@@ -102,7 +98,6 @@ class HistoricoControllerTest {
         String analiseId2 = analisar(
                 token, "o produto é bom", "o produto é excepcional", TipoDesvio.INTENSIDADE, 0.6);
 
-        // 1) listar histórico: duas análises
         String corpoLista = mockMvc.perform(get("/api/historico").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andReturn()
@@ -110,7 +105,6 @@ class HistoricoControllerTest {
                 .getContentAsString();
         JsonNode lista = objectMapper.readTree(corpoLista);
         assertThat(lista).hasSize(2);
-        // mais recente primeiro (analiseId2, intensidade 0.6 -> 60 pts, INTENSIDADE)
         assertThat(lista.get(0).get("id").asText()).isEqualTo(analiseId2);
         assertThat(lista.get(0).get("pontuacaoIntensidade").asInt()).isEqualTo(60);
         assertThat(lista.get(0).get("tipoDesvioPrincipal").asText()).isEqualTo("INTENSIDADE");
@@ -118,14 +112,12 @@ class HistoricoControllerTest {
         assertThat(lista.get(1).get("pontuacaoIntensidade").asInt()).isEqualTo(80);
         assertThat(lista.get(1).get("tipoDesvioPrincipal").asText()).isEqualTo("SENTIDO");
 
-        // 2) detalhe de uma análise específica
         mockMvc.perform(get("/api/historico/" + analiseId1).header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.analiseId").value(analiseId1))
                 .andExpect(jsonPath("$.trechos", org.hamcrest.Matchers.hasSize(1)))
                 .andExpect(jsonPath("$.trechos[0].tipoDesvio").value("SENTIDO"));
 
-        // 3) painel de tendência reflete as duas análises
         mockMvc.perform(get("/api/historico/tendencia").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalAnalises").value(2))
@@ -133,7 +125,6 @@ class HistoricoControllerTest {
                 .andExpect(jsonPath("$.derivasPorTipo.SENTIDO").value(1))
                 .andExpect(jsonPath("$.derivasPorTipo.INTENSIDADE").value(1));
 
-        // 4) excluir uma análise específica
         mockMvc.perform(delete("/api/historico/" + analiseId1).header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
@@ -148,7 +139,6 @@ class HistoricoControllerTest {
         mockMvc.perform(get("/api/historico/" + analiseId1).header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound());
 
-        // 5) excluir todo o histórico restante
         mockMvc.perform(delete("/api/historico").header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
@@ -168,7 +158,7 @@ class HistoricoControllerTest {
         String tokenDono = cadastrarELogar("dono-historico+" + UUID.randomUUID() + "@example.com");
         String tokenIntruso = cadastrarELogar("intruso-historico+" + UUID.randomUUID() + "@example.com");
 
-        String analiseId = analisar(tokenDono, "original", "editado", TipoDesvio.POSICAO, 0.5);
+        String analiseId = analisar(tokenDono, "a reunião foi marcada para segunda de manhã", "a reunião talvez aconteça na segunda", TipoDesvio.POSICAO, 0.5);
 
         mockMvc.perform(get("/api/historico/" + analiseId).header("Authorization", "Bearer " + tokenIntruso))
                 .andExpect(status().isForbidden());

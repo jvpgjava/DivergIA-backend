@@ -17,10 +17,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Confirma que a API responde erros com um único shape padronizado
- * ({@code timestamp/status/error/message/path}) — Fase 8.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -51,7 +47,6 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void deveDevolverShapePadronizadoParaErroDeValidacaoBeanValidation() throws Exception {
-        // email em branco e senha curta demais — dispara MethodArgumentNotValidException
         String corpoInvalido = "{\"nome\":\"Teste\",\"email\":\"\",\"senha\":\"123\"}";
 
         mockMvc.perform(post("/api/auth/cadastro").contentType(MediaType.APPLICATION_JSON).content(corpoInvalido))
