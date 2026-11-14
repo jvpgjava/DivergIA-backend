@@ -6,6 +6,7 @@ import com.divergia.application.port.out.TokenRecuperacaoSenhaRepositoryPort;
 import com.divergia.application.port.out.UsuarioRepositoryPort;
 import com.divergia.domain.model.TokenRecuperacaoSenha;
 import com.divergia.domain.model.Usuario;
+import com.divergia.domain.service.EmailNormalizado;
 import com.divergia.domain.service.GeradorDeTokenSeguro;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,7 @@ public class SolicitarRecuperacaoSenhaService implements SolicitarRecuperacaoSen
 
     @Override
     public void solicitar(String email) {
-        Optional<Usuario> usuario = usuarioRepository.buscarPorEmail(email);
+        Optional<Usuario> usuario = usuarioRepository.buscarPorEmail(EmailNormalizado.de(email));
         if (usuario.isEmpty()) {
             return;
         }
