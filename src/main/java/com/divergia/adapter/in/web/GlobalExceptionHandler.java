@@ -8,6 +8,8 @@ import com.divergia.application.usecase.AnaliseNaoEncontradaException;
 import com.divergia.application.usecase.CredenciaisInvalidasException;
 import com.divergia.application.usecase.EmailJaCadastradoException;
 import com.divergia.application.usecase.EntradaInvalidaException;
+import com.divergia.application.usecase.LoginGoogleIndisponivelException;
+import com.divergia.application.usecase.LoginGoogleInvalidoException;
 import com.divergia.application.usecase.SenhaAtualIncorretaException;
 import com.divergia.application.usecase.SugestaoIndisponivelException;
 import com.divergia.application.usecase.TokenInvalidoOuExpiradoException;
@@ -52,6 +54,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErroResponse> tratarCredenciaisInvalidas(
             CredenciaisInvalidasException e, HttpServletRequest request) {
         return responder(HttpStatus.UNAUTHORIZED, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(LoginGoogleInvalidoException.class)
+    public ResponseEntity<ErroResponse> tratarLoginGoogleInvalido(
+            LoginGoogleInvalidoException e, HttpServletRequest request) {
+        return responder(HttpStatus.UNAUTHORIZED, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(LoginGoogleIndisponivelException.class)
+    public ResponseEntity<ErroResponse> tratarLoginGoogleIndisponivel(
+            LoginGoogleIndisponivelException e, HttpServletRequest request) {
+        return responder(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage(), request);
     }
 
     @ExceptionHandler(SenhaAtualIncorretaException.class)

@@ -4,6 +4,7 @@ import com.divergia.adapter.in.web.dto.AlterarEmailRequest;
 import com.divergia.adapter.in.web.dto.AlterarSenhaRequest;
 import com.divergia.adapter.in.web.dto.CadastroRequest;
 import com.divergia.adapter.in.web.dto.FotoPerfilResponse;
+import com.divergia.adapter.in.web.dto.GoogleLoginRequest;
 import com.divergia.adapter.in.web.dto.LoginRequest;
 import com.divergia.adapter.in.web.dto.LoginResponse;
 import com.divergia.adapter.in.web.dto.RecuperarSenhaRequest;
@@ -15,6 +16,7 @@ import com.divergia.application.port.in.AtualizarFotoPerfilUseCase;
 import com.divergia.application.port.in.AutenticarUsuarioUseCase;
 import com.divergia.application.port.in.CadastrarUsuarioUseCase;
 import com.divergia.application.port.in.EncerrarSessaoUseCase;
+import com.divergia.application.port.in.EntrarComGoogleUseCase;
 import com.divergia.application.port.in.ExcluirContaUseCase;
 import com.divergia.application.port.in.ObterUsuarioLogadoUseCase;
 import com.divergia.application.port.in.RedefinirSenhaUseCase;
@@ -57,6 +59,7 @@ public class AuthController {
     private final AlterarSenhaUseCase alterarSenha;
     private final AlterarEmailUseCase alterarEmail;
     private final AtualizarFotoPerfilUseCase atualizarFotoPerfil;
+    private final EntrarComGoogleUseCase entrarComGoogle;
 
     public AuthController(
             CadastrarUsuarioUseCase cadastrarUsuario,
@@ -68,7 +71,8 @@ public class AuthController {
             ObterUsuarioLogadoUseCase obterUsuarioLogado,
             AlterarSenhaUseCase alterarSenha,
             AlterarEmailUseCase alterarEmail,
-            AtualizarFotoPerfilUseCase atualizarFotoPerfil) {
+            AtualizarFotoPerfilUseCase atualizarFotoPerfil,
+            EntrarComGoogleUseCase entrarComGoogle) {
         this.cadastrarUsuario = cadastrarUsuario;
         this.autenticarUsuario = autenticarUsuario;
         this.encerrarSessao = encerrarSessao;
@@ -79,6 +83,7 @@ public class AuthController {
         this.alterarSenha = alterarSenha;
         this.alterarEmail = alterarEmail;
         this.atualizarFotoPerfil = atualizarFotoPerfil;
+        this.entrarComGoogle = entrarComGoogle;
     }
 
     @PostMapping("/cadastro")
@@ -90,6 +95,11 @@ public class AuthController {
     @PostMapping("/login")
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return LoginResponse.from(autenticarUsuario.autenticar(request.email(), request.senha()));
+    }
+
+    @PostMapping("/google")
+    public LoginResponse entrarComGoogle(@Valid @RequestBody GoogleLoginRequest request) {
+        return LoginResponse.from(entrarComGoogle.entrar(request.idToken()));
     }
 
     @PostMapping("/logout")

@@ -94,6 +94,10 @@ divergia:
   promocao-rag:
     # todo dia às 3h da manhã, por padrão
     cron: ${PROMOCAO_RAG_CRON:0 0 3 * * *}
+  google:
+    # Client ID(s) OAuth do Google aceitos como destinatário do ID token (o "Web client"),
+    # separados por vírgula. Vazio = login com Google desligado (responde 503).
+    client-ids: ${GOOGLE_OAUTH_CLIENT_IDS:}
   uploads:
     diretorio: ${UPLOADS_DIR:./uploads}
     base-url: ${UPLOADS_BASE_URL:http://localhost:8080/uploads}
