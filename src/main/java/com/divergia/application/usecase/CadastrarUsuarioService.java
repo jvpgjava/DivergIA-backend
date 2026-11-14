@@ -28,16 +28,19 @@ public class CadastrarUsuarioService implements CadastrarUsuarioUseCase {
 
     @Override
     public Usuario cadastrar(String nome, String email, String senha) {
-        if (usuarioRepository.existeComEmail(email)) {
-            throw new EmailJaCadastradoException(email);
-        }
         Usuario usuario = Usuario.novo(nome, email, passwordEncoder.codificar(senha));
+        // E-mail já cadastrado responde igual a um cadastro novo (mesmo custo de BCrypt):
+        // a resposta não pode revelar quais e-mails têm conta. A conta existente não é tocada.
+        if (usuarioRepository.existeComEmail(email)) {
+            log.info("Cadastro ignorado: e-mail já em uso");
+            return usuario;
+        }
         Usuario salvo = usuarioRepository.salvar(usuario);
 
         try {
             emailPort.enviarBoasVindas(salvo.email(), salvo.nome());
         } catch (Exception e) {
-            log.warn("Falha ao enviar e-mail de boas-vindas para {}: {}", salvo.email(), e.getMessage());
+            log.warn("Falha ao enviar e-mail de boas-vindas ao usuário {}: {}", salvo.id(), e.getMessage());
         }
         return salvo;
     }

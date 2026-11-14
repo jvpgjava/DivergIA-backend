@@ -12,6 +12,10 @@ spring:
     username: ${GMAIL_USERNAME}
     password: ${GMAIL_APP_PASSWORD}
 
+# Atrás do nginx: o IP do cliente vem do X-Forwarded-For (só de proxies internos confiáveis).
+server:
+  forward-headers-strategy: native
+
 divergia:
   jwt:
     secret: ${JWT_SECRET}
@@ -19,4 +23,4 @@ divergia:
 management:
   endpoint:
     health:
-      show-details: always
+      show-details: never

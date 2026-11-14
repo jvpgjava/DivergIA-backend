@@ -4,7 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record AlterarSenhaRequest(
-        @NotBlank(message = "senhaAtual é obrigatória") String senhaAtual,
+        @NotBlank(message = "senhaAtual é obrigatória")
+        @Size(max = Limites.SENHA_INFORMADA, message = "senha muito longa") String senhaAtual,
         @NotBlank(message = "novaSenha é obrigatória")
-                @Size(min = 8, message = "novaSenha deve ter ao menos 8 caracteres") String novaSenha) {
+        @Size(min = Limites.SENHA_MINIMO, max = Limites.SENHA_MAXIMO, message = "novaSenha deve ter entre 8 e 64 caracteres")
+                String novaSenha) {
 }

@@ -19,6 +19,14 @@ divergia:
       capacidade: 1000
     analise:
       capacidade: 1000
+    geral:
+      capacidade: 100000
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
 
 management:
   endpoint:

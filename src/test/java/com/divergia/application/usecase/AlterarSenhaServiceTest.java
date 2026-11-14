@@ -60,7 +60,7 @@ class AlterarSenhaServiceTest {
         given(passwordEncoder.confere("senha-errada", "hash-antigo")).willReturn(false);
 
         assertThatThrownBy(() -> service.alterar(usuarioId, "senha-errada", "senha-nova12"))
-                .isInstanceOf(CredenciaisInvalidasException.class);
+                .isInstanceOf(SenhaAtualIncorretaException.class);
 
         verify(usuarioRepository, never()).salvar(org.mockito.ArgumentMatchers.any());
     }

@@ -8,6 +8,7 @@ import com.divergia.application.usecase.AnaliseNaoEncontradaException;
 import com.divergia.application.usecase.CredenciaisInvalidasException;
 import com.divergia.application.usecase.EmailJaCadastradoException;
 import com.divergia.application.usecase.EntradaInvalidaException;
+import com.divergia.application.usecase.SenhaAtualIncorretaException;
 import com.divergia.application.usecase.SugestaoIndisponivelException;
 import com.divergia.application.usecase.TokenInvalidoOuExpiradoException;
 import com.divergia.application.usecase.TrechoDerivaNaoEncontradoException;
@@ -15,13 +16,23 @@ import com.divergia.application.usecase.UsuarioNaoEncontradoException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.io.UncheckedIOException;
 import java.util.stream.Collectors;
@@ -30,6 +41,7 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final String REQUISICAO_INVALIDA = "Requisição inválida.";
 
     @ExceptionHandler(EmailJaCadastradoException.class)
     public ResponseEntity<ErroResponse> tratarEmailJaCadastrado(EmailJaCadastradoException e, HttpServletRequest request) {
@@ -40,6 +52,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErroResponse> tratarCredenciaisInvalidas(
             CredenciaisInvalidasException e, HttpServletRequest request) {
         return responder(HttpStatus.UNAUTHORIZED, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(SenhaAtualIncorretaException.class)
+    public ResponseEntity<ErroResponse> tratarSenhaAtualIncorreta(
+            SenhaAtualIncorretaException e, HttpServletRequest request) {
+        return responder(HttpStatus.BAD_REQUEST, e.getMessage(), request);
     }
 
     @ExceptionHandler(TokenInvalidoOuExpiradoException.class)
@@ -76,7 +94,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErroResponse> tratarFalhaDeExtracao(
             ExtracaoDocumentoException e, HttpServletRequest request) {
         log.warn("Falha ao extrair documento em {}: {}", request.getRequestURI(), e.getMessage());
-        return responder(HttpStatus.BAD_GATEWAY, e.getMessage(), request);
+        return responder(
+                HttpStatus.BAD_GATEWAY,
+                "Não foi possível ler o arquivo enviado. Tente outro formato ou cole o texto.",
+                request);
     }
 
     @ExceptionHandler(LlmException.class)
@@ -105,7 +126,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UncheckedIOException.class)
     public ResponseEntity<ErroResponse> tratarFalhaDeLeituraDeArquivo(
             UncheckedIOException e, HttpServletRequest request) {
-        return responder(HttpStatus.BAD_REQUEST, e.getMessage(), request);
+        log.warn("Falha de E/S em {}: {}", request.getRequestURI(), e.getMessage());
+        return responder(HttpStatus.BAD_REQUEST, "Não foi possível processar o arquivo enviado.", request);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
@@ -113,7 +135,7 @@ public class GlobalExceptionHandler {
             MaxUploadSizeExceededException e, HttpServletRequest request) {
         return responder(
                 HttpStatus.BAD_REQUEST,
-                "O arquivo enviado é muito grande. O tamanho máximo permitido é 20MB.",
+                "O arquivo enviado é muito grande.",
                 request);
     }
 
@@ -123,9 +145,52 @@ public class GlobalExceptionHandler {
         return responder(HttpStatus.BAD_REQUEST, "Não foi possível processar o arquivo enviado.", request);
     }
 
+    @ExceptionHandler(RequisicaoInvalidaException.class)
+    public ResponseEntity<ErroResponse> tratarRequisicaoInvalida(
+            RequisicaoInvalidaException e, HttpServletRequest request) {
+        return responder(HttpStatus.BAD_REQUEST, e.getMessage(), request);
+    }
+
+    // A mensagem de IllegalArgumentException é interna (nomes de campos, regras do domínio): não vai ao cliente.
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErroResponse> tratarArgumentoInvalido(IllegalArgumentException e, HttpServletRequest request) {
-        return responder(HttpStatus.BAD_REQUEST, e.getMessage(), request);
+        log.info("Argumento inválido em {}: {}", request.getRequestURI(), e.getMessage());
+        return responder(HttpStatus.BAD_REQUEST, REQUISICAO_INVALIDA, request);
+    }
+
+    @ExceptionHandler({
+            HttpMessageNotReadableException.class,
+            MethodArgumentTypeMismatchException.class,
+            MissingServletRequestParameterException.class,
+            MissingServletRequestPartException.class,
+            MissingRequestHeaderException.class,
+            HandlerMethodValidationException.class})
+    public ResponseEntity<ErroResponse> tratarRequisicaoMalFormada(Exception e, HttpServletRequest request) {
+        return responder(HttpStatus.BAD_REQUEST, REQUISICAO_INVALIDA, request);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErroResponse> tratarMetodoNaoSuportado(
+            HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
+        return responder(HttpStatus.METHOD_NOT_ALLOWED, "Método não permitido.", request);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErroResponse> tratarTipoNaoSuportado(
+            HttpMediaTypeNotSupportedException e, HttpServletRequest request) {
+        return responder(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Tipo de conteúdo não suportado.", request);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErroResponse> tratarRotaInexistente(NoResourceFoundException e, HttpServletRequest request) {
+        return responder(HttpStatus.NOT_FOUND, "Recurso não encontrado.", request);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErroResponse> tratarViolacaoDeDados(
+            DataIntegrityViolationException e, HttpServletRequest request) {
+        log.warn("Violação de integridade em {}", request.getRequestURI());
+        return responder(HttpStatus.BAD_REQUEST, REQUISICAO_INVALIDA, request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

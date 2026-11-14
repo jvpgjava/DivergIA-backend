@@ -106,7 +106,7 @@ class AnaliseControllerTest {
         MockMultipartFile arquivo = new MockMultipartFile(
                 "arquivoOriginal", "original.pdf", "application/pdf", conteudoArquivo);
 
-        given(extracaoDocumentoPort.extrairTexto(conteudoArquivo, "original.pdf"))
+        given(extracaoDocumentoPort.extrairTexto(conteudoArquivo, "documento.pdf"))
                 .willReturn("texto extraído do arquivo pdf");
         given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
         given(llmPort.avaliarDerivas(eq("texto extraído do arquivo pdf"), eq("versão editada colada"), any()))
@@ -123,7 +123,7 @@ class AnaliseControllerTest {
                 .andExpect(jsonPath("$.trechos", org.hamcrest.Matchers.hasSize(1)))
                 .andExpect(jsonPath("$.trechos[0].tipoDesvio").value("POSICAO"));
 
-        then(extracaoDocumentoPort).should().extrairTexto(conteudoArquivo, "original.pdf");
+        then(extracaoDocumentoPort).should().extrairTexto(conteudoArquivo, "documento.pdf");
     }
 
     @Test

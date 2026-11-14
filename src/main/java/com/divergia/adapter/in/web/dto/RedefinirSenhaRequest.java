@@ -4,7 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record RedefinirSenhaRequest(
-        @NotBlank(message = "token é obrigatório") String token,
+        @NotBlank(message = "token é obrigatório")
+        @Size(max = Limites.TOKEN_RECUPERACAO, message = "token inválido") String token,
         @NotBlank(message = "novaSenha é obrigatória")
-                @Size(min = 8, message = "novaSenha deve ter ao menos 8 caracteres") String novaSenha) {
+        @Size(min = Limites.SENHA_MINIMO, max = Limites.SENHA_MAXIMO, message = "novaSenha deve ter entre 8 e 64 caracteres")
+                String novaSenha) {
 }

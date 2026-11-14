@@ -71,6 +71,11 @@ divergia:
     analise:
       capacidade: 10
       janela-minutos: 1
+    # Teto por IP para qualquer rota (proteção geral contra abuso).
+    geral:
+      capacidade: 120
+  # Corpo máximo de requisições que não são upload (JSON).
+  corpo-maximo-bytes: 262144
   analise:
     quantidade-exemplos-rag: 5
     # Limite por texto (o app usa o mesmo). Vale também para texto extraído de arquivo.
@@ -92,6 +97,14 @@ divergia:
   uploads:
     diretorio: ${UPLOADS_DIR:./uploads}
     base-url: ${UPLOADS_BASE_URL:http://localhost:8080/uploads}
+
+# Documentação da API desligada por padrão: em produção ela expõe todas as rotas.
+# Para usar localmente, defina SWAGGER_HABILITADO=true no .env.
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_HABILITADO:false}
+  swagger-ui:
+    enabled: ${SWAGGER_HABILITADO:false}
 
 management:
   endpoints:
