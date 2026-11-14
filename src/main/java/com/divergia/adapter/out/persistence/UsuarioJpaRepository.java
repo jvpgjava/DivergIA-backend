@@ -9,5 +9,10 @@ public interface UsuarioJpaRepository extends JpaRepository<UsuarioJpaEntity, UU
 
     Optional<UsuarioJpaEntity> findByEmail(String email);
 
+    // Ignora a caixa: contas antigas guardadas com maiúsculas continuam sendo encontradas.
+    Optional<UsuarioJpaEntity> findFirstByEmailIgnoreCaseOrderByCriadoEmAsc(String email);
+
+    boolean existsByEmailIgnoreCase(String email);
+
     boolean existsByEmail(String email);
 }

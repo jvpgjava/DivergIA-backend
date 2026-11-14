@@ -53,4 +53,20 @@ class UsuarioPersistenceTest {
         assertThat(repository.findByEmail(email)).isPresent();
         assertThat(repository.findByEmail("nao-cadastrado@example.com")).isEmpty();
     }
+
+    @Test
+    void buscaIgnoraACaixaEOBancoNaoAceitaDoisEmailsIguaisEmCaixasDiferentes() {
+        String sufixo = UUID.randomUUID().toString();
+        entityManager.persistAndFlush(new UsuarioJpaEntity(
+                UUID.randomUUID(), "Caixa", "Ana+" + sufixo + "@Example.com", "hash", Instant.now(), null));
+        entityManager.clear();
+
+        assertThat(repository.existsByEmailIgnoreCase("ana+" + sufixo + "@example.com")).isTrue();
+        assertThat(repository.findFirstByEmailIgnoreCaseOrderByCriadoEmAsc("ANA+" + sufixo + "@EXAMPLE.COM")).isPresent();
+
+        UsuarioJpaEntity duplicado = new UsuarioJpaEntity(
+                UUID.randomUUID(), "Duplicada", "ana+" + sufixo + "@example.com", "hash", Instant.now(), null);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> entityManager.persistAndFlush(duplicado))
+                .isInstanceOf(Exception.class);
+    }
 }

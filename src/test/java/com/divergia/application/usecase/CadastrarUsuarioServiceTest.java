@@ -69,4 +69,16 @@ class CadastrarUsuarioServiceTest {
         verify(usuarioRepository, never()).salvar(any());
         verify(emailPort, never()).enviarBoasVindas(anyString(), anyString());
     }
+
+    @Test
+    void emailComMaiusculasEEspacosEGuardadoNormalizadoEBuscadoSemDiferenciarCaixa() {
+        given(usuarioRepository.existeComEmail("ana@example.com")).willReturn(false);
+        given(passwordEncoder.codificar("senha12345")).willReturn("hash-codificado");
+        given(usuarioRepository.salvar(any(Usuario.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        Usuario resultado = service.cadastrar("Ana", "  Ana@Example.COM ", "senha12345");
+
+        assertThat(resultado.email()).isEqualTo("ana@example.com");
+        verify(usuarioRepository).existeComEmail("ana@example.com");
+    }
 }
