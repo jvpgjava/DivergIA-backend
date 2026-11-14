@@ -23,10 +23,10 @@ public class AlterarEmailService implements AlterarEmailUseCase {
     public Usuario alterar(UUID usuarioId, String novoEmail, String senhaAtual) {
         Usuario usuario = usuarioRepository.buscarPorId(usuarioId).orElseThrow(UsuarioNaoEncontradoException::new);
         if (!passwordEncoder.confere(senhaAtual, usuario.senhaHash())) {
-            throw new CredenciaisInvalidasException();
+            throw new SenhaAtualIncorretaException();
         }
         if (!usuario.email().equalsIgnoreCase(novoEmail) && usuarioRepository.existeComEmail(novoEmail)) {
-            throw new EmailJaCadastradoException(novoEmail);
+            throw new EmailJaCadastradoException();
         }
         Usuario atualizado = usuario.comEmail(novoEmail);
         return usuarioRepository.salvar(atualizado);

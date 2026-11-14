@@ -7,12 +7,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 @Component
 public class EmailAdapter implements EmailPort {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailAdapter.class);
 
     private static final String LOGO_CONTENT_ID = "logo-divergia";
     private static final String LOGO_CLASSPATH = "templates/email/images/logo-divergia-dark.png";
@@ -33,13 +38,15 @@ public class EmailAdapter implements EmailPort {
         this.validadeRecuperacaoMinutos = validadeRecuperacaoMinutos;
     }
 
+    // Assíncrono: o tempo de resposta de recuperar-senha não pode revelar se o e-mail existe.
+    @Async
     @Override
     public void enviarRecuperacaoSenha(String destinatario, String tokenBruto) {
         Context contexto = new Context();
         contexto.setVariable("token", espacarCaracteres(tokenBruto));
         contexto.setVariable("validadeMinutos", validadeRecuperacaoMinutos);
         contexto.setVariable("logoContentId", LOGO_CONTENT_ID);
-        enviar(destinatario, "Recuperação de senha — DivergIA", "email/recuperacao-senha", contexto);
+        enviarComSeguranca(destinatario, "Recuperação de senha — DivergIA", "email/recuperacao-senha", contexto);
     }
 
     private String espacarCaracteres(String texto) {
@@ -47,12 +54,21 @@ public class EmailAdapter implements EmailPort {
         return String.join(" ", texto.split(""));
     }
 
+    @Async
     @Override
     public void enviarBoasVindas(String destinatario, String nome) {
         Context contexto = new Context();
         contexto.setVariable("nome", nome);
         contexto.setVariable("logoContentId", LOGO_CONTENT_ID);
-        enviar(destinatario, "Bem-vindo(a) ao DivergIA", "email/boas-vindas", contexto);
+        enviarComSeguranca(destinatario, "Bem-vindo(a) ao DivergIA", "email/boas-vindas", contexto);
+    }
+
+    private void enviarComSeguranca(String destinatario, String assunto, String template, Context contexto) {
+        try {
+            enviar(destinatario, assunto, template, contexto);
+        } catch (RuntimeException e) {
+            log.warn("Falha ao enviar e-mail '{}': {}", assunto, e.getClass().getSimpleName());
+        }
     }
 
     private void enviar(String destinatario, String assunto, String template, Context contexto) {
@@ -67,7 +83,7 @@ public class EmailAdapter implements EmailPort {
             helper.setText(corpoHtml, true);
             helper.addInline(LOGO_CONTENT_ID, new ClassPathResource(LOGO_CLASSPATH));
         } catch (MessagingException e) {
-            throw new IllegalStateException("Não foi possível montar o e-mail: " + e.getMessage(), e);
+            throw new IllegalStateException("Não foi possível montar o e-mail", e);
         }
         mailSender.send(mensagem);
     }

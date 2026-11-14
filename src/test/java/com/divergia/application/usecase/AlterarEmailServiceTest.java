@@ -62,7 +62,7 @@ class AlterarEmailServiceTest {
         given(passwordEncoder.confere("senha-errada", "hash")).willReturn(false);
 
         assertThatThrownBy(() -> service.alterar(usuarioId, "novo@example.com", "senha-errada"))
-                .isInstanceOf(CredenciaisInvalidasException.class);
+                .isInstanceOf(SenhaAtualIncorretaException.class);
 
         verify(usuarioRepository, never()).salvar(any());
     }

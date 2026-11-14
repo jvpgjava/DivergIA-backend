@@ -69,8 +69,8 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
 
     @Override
     public ResultadoAnalise analisar(EntradaAnalise entrada) {
-        String textoOriginal = NormalizadorDeTexto.limpar(resolverTexto(entrada.original()));
-        String textoEditado = NormalizadorDeTexto.limpar(resolverTexto(entrada.editado()));
+        String textoOriginal = NormalizadorDeTexto.limpar(limitar(resolverTexto(entrada.original()), CampoEntrada.ORIGINAL));
+        String textoEditado = NormalizadorDeTexto.limpar(limitar(resolverTexto(entrada.editado()), CampoEntrada.EDITADO));
 
         validarEntrada(entrada, textoOriginal, textoEditado);
 
@@ -147,6 +147,14 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
                     DetectorDeIdioma.nome(triagem.idiomaOriginal()), DetectorDeIdioma.nome(triagem.idiomaEditado()));
         }
         return ProblemaDeEntrada.de(triagem.motivo(), triagem.campo());
+    }
+
+    // Corta texto gigante antes da normalização: as regex não podem rodar sobre megabytes.
+    private String limitar(String texto, CampoEntrada campo) {
+        if (texto != null && texto.length() > validador.maximoCaracteres() * 2) {
+            recusar(ProblemaDeEntrada.textoLongo(campo, validador.maximoCaracteres()));
+        }
+        return texto;
     }
 
     private void recusar(ProblemaDeEntrada problema) {

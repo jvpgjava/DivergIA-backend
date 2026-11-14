@@ -8,10 +8,13 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.UUID;
 
 @Component
 public class FotoPerfilDiscoAdapter implements FotoPerfilPort {
+
+    private static final Set<String> EXTENSOES = Set.of("jpg", "png", "webp");
 
     private final Path diretorio;
     private final String baseUrl;
@@ -26,9 +29,18 @@ public class FotoPerfilDiscoAdapter implements FotoPerfilPort {
     @Override
     public String salvar(UUID usuarioId, byte[] conteudo, String extensao) {
         try {
-            Files.createDirectories(diretorio);
+            if (!EXTENSOES.contains(extensao)) {
+                throw new IllegalArgumentException("Extensão de foto não permitida");
+            }
+            Path pasta = diretorio.toAbsolutePath().normalize();
+            Files.createDirectories(pasta);
             String nomeArquivo = usuarioId + "-" + System.currentTimeMillis() + "." + extensao;
-            Files.write(diretorio.resolve(nomeArquivo), conteudo);
+            Path destino = pasta.resolve(nomeArquivo).normalize();
+            // Defesa em profundidade contra path traversal: o arquivo nunca sai da pasta de uploads.
+            if (!destino.getParent().equals(pasta)) {
+                throw new IllegalArgumentException("Caminho de foto inválido");
+            }
+            Files.write(destino, conteudo);
             return baseUrl + "/" + nomeArquivo;
         } catch (IOException e) {
             throw new UncheckedIOException("Não foi possível salvar a foto de perfil", e);

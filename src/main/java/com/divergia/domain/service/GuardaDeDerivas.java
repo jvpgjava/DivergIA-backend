@@ -26,6 +26,7 @@ public final class GuardaDeDerivas {
                     + "|sou (?:um|uma) (?:IA|assistente|modelo)|n[aã]o (?:posso|consigo) (?:ajudar|analisar|responder)"
                     + "|\\bClaude\\b|\\bAnthropic\\b|\\bGPT\\b|\\bOpenAI\\b|\\bAbacus\\b",
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+    private static final Pattern CITACAO = Pattern.compile("[\"“”']([^\"“”']{3,})[\"“”']");
     private static final Pattern MARKDOWN = Pattern.compile("\\*\\*|__|`+|^#+\\s*|^\\s*[-*]\\s+", Pattern.MULTILINE);
 
     public enum Descarte {
@@ -161,7 +162,25 @@ public final class GuardaDeDerivas {
         if (temTermoInternoAlheio(explicacao, textoOriginal, textoEditado)) {
             return false;
         }
+        if (temCitacaoAlheia(explicacao, textoOriginal, textoEditado)) {
+            return false;
+        }
         return LexicoOfensivo.introduzidos(explicacao, textoOriginal, textoEditado).isEmpty();
+    }
+
+    // Citação na explicação que não está nos textos do usuário pode vir dos exemplos do RAG,
+    // que são textos de outras pessoas: não pode chegar à tela.
+    static boolean temCitacaoAlheia(String explicacao, String textoOriginal, String textoEditado) {
+        String fontes = NormalizadorDeTexto.paraComparacao(textoOriginal) + " "
+                + NormalizadorDeTexto.paraComparacao(textoEditado);
+        java.util.regex.Matcher m = CITACAO.matcher(explicacao);
+        while (m.find()) {
+            String citado = NormalizadorDeTexto.paraComparacao(m.group(1));
+            if (NormalizadorDeTexto.palavras(citado).size() >= 3 && !fontes.contains(citado)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static boolean temTermoInternoAlheio(String saida, String... fontes) {
