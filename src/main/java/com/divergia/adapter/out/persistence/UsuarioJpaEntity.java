@@ -1,7 +1,10 @@
 package com.divergia.adapter.out.persistence;
 
 import jakarta.persistence.Column;
+import com.divergia.domain.model.Papel;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -30,16 +33,32 @@ public class UsuarioJpaEntity {
     @Column(name = "foto_url")
     private String fotoUrl;
 
+    // updatable = false: a aplicação só grava o papel ao criar a conta. Mudar de papel é feito por script
+    // direto no banco, e um save() de senha/e-mail/foto nunca desfaz uma promoção feita nesse meio tempo.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20, updatable = false)
+    private Papel papel;
+
     protected UsuarioJpaEntity() {
     }
 
     public UsuarioJpaEntity(UUID id, String nome, String email, String senhaHash, Instant criadoEm, String fotoUrl) {
+        this(id, nome, email, senhaHash, criadoEm, fotoUrl, Papel.USUARIO);
+    }
+
+    public UsuarioJpaEntity(
+            UUID id, String nome, String email, String senhaHash, Instant criadoEm, String fotoUrl, Papel papel) {
         this.id = id;
         this.nome = nome;
         this.email = email;
         this.senhaHash = senhaHash;
         this.criadoEm = criadoEm;
         this.fotoUrl = fotoUrl;
+        this.papel = papel;
+    }
+
+    public Papel getPapel() {
+        return papel;
     }
 
     public UUID getId() {

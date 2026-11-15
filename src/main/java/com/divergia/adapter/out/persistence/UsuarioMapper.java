@@ -14,7 +14,8 @@ public class UsuarioMapper {
                 entity.getEmail(),
                 entity.getSenhaHash(),
                 entity.getCriadoEm(),
-                entity.getFotoUrl());
+                entity.getFotoUrl(),
+                entity.getPapel());
     }
 
     public static UsuarioJpaEntity toEntity(Usuario usuario) {
@@ -24,6 +25,7 @@ public class UsuarioMapper {
                 usuario.email(),
                 usuario.senhaHash(),
                 usuario.criadoEm(),
-                usuario.fotoUrl());
+                usuario.fotoUrl(),
+                usuario.papel());
     }
 }
