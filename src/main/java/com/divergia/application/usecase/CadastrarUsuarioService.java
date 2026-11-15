@@ -5,6 +5,7 @@ import com.divergia.application.port.out.EmailPort;
 import com.divergia.application.port.out.PasswordEncoderPort;
 import com.divergia.application.port.out.UsuarioRepositoryPort;
 import com.divergia.domain.model.Usuario;
+import com.divergia.domain.service.EmailNormalizado;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,8 @@ public class CadastrarUsuarioService implements CadastrarUsuarioUseCase {
     }
 
     @Override
-    public Usuario cadastrar(String nome, String email, String senha) {
+    public Usuario cadastrar(String nome, String emailInformado, String senha) {
+        String email = EmailNormalizado.de(emailInformado);
         Usuario usuario = Usuario.novo(nome, email, passwordEncoder.codificar(senha));
         // E-mail já cadastrado responde igual a um cadastro novo (mesmo custo de BCrypt):
         // a resposta não pode revelar quais e-mails têm conta. A conta existente não é tocada.

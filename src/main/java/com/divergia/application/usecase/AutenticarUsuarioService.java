@@ -6,6 +6,7 @@ import com.divergia.application.port.out.TokenPort;
 import com.divergia.application.port.out.UsuarioRepositoryPort;
 import com.divergia.domain.model.TokenAcesso;
 import com.divergia.domain.model.Usuario;
+import com.divergia.domain.service.EmailNormalizado;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -28,7 +29,7 @@ public class AutenticarUsuarioService implements AutenticarUsuarioUseCase {
 
     @Override
     public TokenAcesso autenticar(String email, String senha) {
-        Optional<Usuario> encontrado = usuarioRepository.buscarPorEmail(email);
+        Optional<Usuario> encontrado = usuarioRepository.buscarPorEmail(EmailNormalizado.de(email));
         // Compara com um hash fictício quando o e-mail não existe: o tempo de resposta não revela contas.
         String hash = encontrado.map(Usuario::senhaHash).orElse(hashFicticio);
         boolean confere = passwordEncoder.confere(senha, hash);

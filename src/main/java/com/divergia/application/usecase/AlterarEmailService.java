@@ -4,6 +4,7 @@ import com.divergia.application.port.in.AlterarEmailUseCase;
 import com.divergia.application.port.out.PasswordEncoderPort;
 import com.divergia.application.port.out.UsuarioRepositoryPort;
 import com.divergia.domain.model.Usuario;
+import com.divergia.domain.service.EmailNormalizado;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -20,7 +21,8 @@ public class AlterarEmailService implements AlterarEmailUseCase {
     }
 
     @Override
-    public Usuario alterar(UUID usuarioId, String novoEmail, String senhaAtual) {
+    public Usuario alterar(UUID usuarioId, String novoEmailInformado, String senhaAtual) {
+        String novoEmail = EmailNormalizado.de(novoEmailInformado);
         Usuario usuario = usuarioRepository.buscarPorId(usuarioId).orElseThrow(UsuarioNaoEncontradoException::new);
         if (!passwordEncoder.confere(senhaAtual, usuario.senhaHash())) {
             throw new SenhaAtualIncorretaException();

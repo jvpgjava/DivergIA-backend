@@ -109,4 +109,19 @@ class EntrarComGoogleServiceTest {
         assertThat(EntrarComGoogleService.nomeSeguro(null, "x@gmail.com")).isEqualTo("x");
         assertThat(EntrarComGoogleService.nomeSeguro("A".repeat(300), "a@b.com")).hasSize(100);
     }
+
+    @Test
+    void contaCriadaComSenhaEmOutraCaixaEReconhecidaNoGoogleSemDuplicar() {
+        Usuario existente = new Usuario(UUID.randomUUID(), "Ana", "ana@gmail.com", "hash", Instant.now(), null);
+        given(verificador.configurado()).willReturn(true);
+        given(verificador.verificar("id-token")).willReturn(
+                Optional.of(new IdentidadeGoogle("1", "ANA@gmail.com", "Ana")));
+        given(usuarioRepository.buscarPorEmail("ana@gmail.com")).willReturn(Optional.of(existente));
+        given(tokenPort.gerar(existente.id())).willReturn(token);
+
+        service.entrar("id-token");
+
+        verify(usuarioRepository).buscarPorEmail("ana@gmail.com");
+        verify(usuarioRepository, never()).salvar(any());
+    }
 }

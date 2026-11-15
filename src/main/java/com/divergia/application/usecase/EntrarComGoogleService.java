@@ -9,13 +9,13 @@ import com.divergia.application.port.out.VerificadorGooglePort;
 import com.divergia.domain.model.IdentidadeGoogle;
 import com.divergia.domain.model.TokenAcesso;
 import com.divergia.domain.model.Usuario;
+import com.divergia.domain.service.EmailNormalizado;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 @Service
@@ -52,7 +52,7 @@ public class EntrarComGoogleService implements EntrarComGoogleUseCase {
         }
         IdentidadeGoogle identidade = verificador.verificar(idToken)
                 .orElseThrow(LoginGoogleInvalidoException::new);
-        String email = identidade.email().toLowerCase(Locale.ROOT);
+        String email = EmailNormalizado.de(identidade.email());
 
         // E-mail verificado pelo Google: entra na conta existente com esse e-mail (mantém o histórico)
         // ou cria uma nova na hora.

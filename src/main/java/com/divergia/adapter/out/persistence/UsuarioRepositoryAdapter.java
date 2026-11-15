@@ -29,12 +29,12 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
 
     @Override
     public Optional<Usuario> buscarPorEmail(String email) {
-        return repository.findByEmail(email).map(UsuarioMapper::toDomain);
+        return repository.findFirstByEmailIgnoreCaseOrderByCriadoEmAsc(email).map(UsuarioMapper::toDomain);
     }
 
     @Override
     public boolean existeComEmail(String email) {
-        return repository.existsByEmail(email);
+        return repository.existsByEmailIgnoreCase(email);
     }
 
     @Override

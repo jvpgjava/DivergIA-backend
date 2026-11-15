@@ -4,7 +4,8 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-public record Usuario(UUID id, String nome, String email, String senhaHash, Instant criadoEm, String fotoUrl) {
+public record Usuario(
+        UUID id, String nome, String email, String senhaHash, Instant criadoEm, String fotoUrl, Papel papel) {
 
     public Usuario {
         Objects.requireNonNull(id, "id não pode ser nulo");
@@ -16,21 +17,30 @@ public record Usuario(UUID id, String nome, String email, String senhaHash, Inst
         }
         Objects.requireNonNull(senhaHash, "senhaHash não pode ser nulo");
         Objects.requireNonNull(criadoEm, "criadoEm não pode ser nulo");
+        Objects.requireNonNull(papel, "papel não pode ser nulo");
+    }
+
+    public Usuario(UUID id, String nome, String email, String senhaHash, Instant criadoEm, String fotoUrl) {
+        this(id, nome, email, senhaHash, criadoEm, fotoUrl, Papel.USUARIO);
     }
 
     public static Usuario novo(String nome, String email, String senhaHash) {
-        return new Usuario(UUID.randomUUID(), nome, email, senhaHash, Instant.now(), null);
+        return new Usuario(UUID.randomUUID(), nome, email, senhaHash, Instant.now(), null, Papel.USUARIO);
+    }
+
+    public boolean ehDev() {
+        return papel == Papel.DEV;
     }
 
     public Usuario comEmail(String novoEmail) {
-        return new Usuario(id, nome, novoEmail, senhaHash, criadoEm, fotoUrl);
+        return new Usuario(id, nome, novoEmail, senhaHash, criadoEm, fotoUrl, papel);
     }
 
     public Usuario comSenhaHash(String novoSenhaHash) {
-        return new Usuario(id, nome, email, novoSenhaHash, criadoEm, fotoUrl);
+        return new Usuario(id, nome, email, novoSenhaHash, criadoEm, fotoUrl, papel);
     }
 
     public Usuario comFotoUrl(String novaFotoUrl) {
-        return new Usuario(id, nome, email, senhaHash, criadoEm, novaFotoUrl);
+        return new Usuario(id, nome, email, senhaHash, criadoEm, novaFotoUrl, papel);
     }
 }
