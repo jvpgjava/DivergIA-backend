@@ -6,6 +6,7 @@ import com.divergia.application.port.in.EntradaTexto;
 import com.divergia.application.port.out.AnaliseRepositoryPort;
 import com.divergia.application.port.out.ExtracaoDocumentoPort;
 import com.divergia.application.port.out.LlmPort;
+import com.divergia.application.port.out.MetricasGlobaisPort;
 import com.divergia.application.port.out.TrechoDerivaRepositoryPort;
 import com.divergia.domain.model.Analise;
 import com.divergia.domain.model.AvaliacaoDeDeriva;
@@ -42,6 +43,7 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
     private final LlmPort llmPort;
     private final AnaliseRepositoryPort analiseRepository;
     private final TrechoDerivaRepositoryPort trechoDerivaRepository;
+    private final MetricasGlobaisPort metricasGlobais;
     private final TransactionOperations transacao;
     private final PoliticaRetencaoDeTexto politicaRetencao = new PoliticaRetencaoDeTexto();
     private final GuardaDeDerivas guardaDeDerivas = new GuardaDeDerivas();
@@ -54,6 +56,7 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
             LlmPort llmPort,
             AnaliseRepositoryPort analiseRepository,
             TrechoDerivaRepositoryPort trechoDerivaRepository,
+            MetricasGlobaisPort metricasGlobais,
             TransactionOperations transacao,
             @Value("${divergia.analise.maximo-caracteres:10000}") int maximoCaracteres,
             @Value("${divergia.ia.triagem.confianca-minima:0.7}") double confiancaMinimaTriagem) {
@@ -62,6 +65,7 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
         this.llmPort = llmPort;
         this.analiseRepository = analiseRepository;
         this.trechoDerivaRepository = trechoDerivaRepository;
+        this.metricasGlobais = metricasGlobais;
         this.transacao = transacao;
         this.validador = new ValidadorDeEntrada(maximoCaracteres);
         this.confiancaMinimaTriagem = confiancaMinimaTriagem;
@@ -138,6 +142,10 @@ public class AnalisarTextoService implements AnalisarTextoUseCase {
             // Os trechos citam texto bruto, então seguem a mesma regra de retenção da análise.
             trechos.add(entrada.manterHistorico() ? trechoDerivaRepository.salvar(trecho) : trecho);
         }
+        // Na mesma transação da análise. Conta a análise inclusive quando o usuário não guardou histórico
+        // e depois a apaga: o contador global é só agregado, sem texto nem usuário.
+        metricasGlobais.registrarAnalise(
+                analiseSalva.criadoEm(), derivas.stream().map(AvaliacaoDeDeriva::tipoDesvio).toList());
         return new ResultadoAnalise(analiseSalva, trechos);
     }
 

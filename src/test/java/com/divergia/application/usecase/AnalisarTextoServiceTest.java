@@ -5,6 +5,7 @@ import com.divergia.application.port.in.EntradaTexto;
 import com.divergia.application.port.out.AnaliseRepositoryPort;
 import com.divergia.application.port.out.ExtracaoDocumentoPort;
 import com.divergia.application.port.out.LlmPort;
+import com.divergia.application.port.out.MetricasGlobaisPort;
 import com.divergia.application.port.out.TrechoDerivaRepositoryPort;
 import com.divergia.application.port.out.VectorStorePort;
 import com.divergia.domain.model.Analise;
@@ -60,13 +61,16 @@ class AnalisarTextoServiceTest {
     @Mock
     private TrechoDerivaRepositoryPort trechoDerivaRepository;
 
+    @Mock
+    private MetricasGlobaisPort metricasGlobais;
+
     private AnalisarTextoService service;
 
     @BeforeEach
     void setUp() {
         service = new AnalisarTextoService(
                 extracaoDocumentoPort, new BuscadorDeExemplosRag(vectorStorePort, 5), llmPort, analiseRepository,
-                trechoDerivaRepository, TransactionOperations.withoutTransaction(), 10000, 0.7);
+                trechoDerivaRepository, metricasGlobais, TransactionOperations.withoutTransaction(), 10000, 0.7);
     }
 
     private static AvaliacaoDeDeriva derivaValida() {
@@ -99,6 +103,34 @@ class AnalisarTextoServiceTest {
         assertThat(resultado.trechosDeDeriva().get(0).tipoDesvio()).isEqualTo(TipoDesvio.INTENSIDADE);
         verify(trechoDerivaRepository).salvar(any(TrechoDeriva.class));
         verify(extracaoDocumentoPort, never()).extrairTexto(any(), anyString());
+    }
+
+    @Test
+    void deveContabilizarNoPainelGlobalAnaliseEDivergenciasInclusiveSemHistorico() {
+        given(vectorStorePort.buscarSimilares(anyString(), anyInt())).willReturn(List.of());
+        given(llmPort.avaliarDerivas(anyString(), anyString(), any())).willReturn(modelo(derivaValida()));
+        persistenciaEcoando();
+
+        service.analisar(entrada(ORIGINAL, EDITADO, false));
+
+        verify(metricasGlobais).registrarAnalise(any(), eq(List.of(TipoDesvio.INTENSIDADE)));
+    }
+
+    @Test
+    void deveContabilizarAnaliseSemDivergenciasQuandoOsTextosSaoIguais() {
+        persistenciaEcoando();
+
+        service.analisar(entrada(ORIGINAL, ORIGINAL, true));
+
+        verify(metricasGlobais).registrarAnalise(any(), eq(List.of()));
+    }
+
+    @Test
+    void naoDeveContabilizarQuandoAEntradaForRecusada() {
+        assertThatThrownBy(() -> service.analisar(entrada(ORIGINAL, "01101111 01101100 01100001 00100000 01101101 01110101 01101110 01100100 01101111", true)))
+                .isInstanceOf(EntradaInvalidaException.class);
+
+        verifyNoInteractions(metricasGlobais);
     }
 
     @Test
