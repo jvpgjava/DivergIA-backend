@@ -1,8 +1,13 @@
 package com.divergia.adapter.out.security;
 
 import com.divergia.domain.model.TokenAcesso;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Date;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -10,8 +15,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JwtTokenAdapterTest {
 
-    private final JwtTokenAdapter adapter = new JwtTokenAdapter(
-            new JwtProperties("chave-de-teste-com-pelo-menos-32-caracteres-para-hs256", 15));
+    private static final String SEGREDO = "chave-de-teste-com-pelo-menos-32-caracteres-para-hs256";
+
+    private final JwtTokenAdapter adapter = new JwtTokenAdapter(new JwtProperties(SEGREDO));
 
     @Test
     void deveGerarUmTokenQueValidaDeVoltaParaOMesmoUsuario() {
@@ -25,6 +31,17 @@ class JwtTokenAdapterTest {
     }
 
     @Test
+    void tokenNovoNaoCarregaDataDeExpiracao() {
+        TokenAcesso gerado = adapter.gerar(UUID.randomUUID());
+
+        String payload = new String(
+                Base64.getUrlDecoder().decode(gerado.valor().split("\\.")[1]), StandardCharsets.UTF_8);
+
+        assertThat(payload).doesNotContain("\"exp\"");
+        assertThat(adapter.validar(gerado.valor()).jti()).isEqualTo(gerado.jti());
+    }
+
+    @Test
     void deveRejeitarTokenComAssinaturaAdulterada() {
         TokenAcesso gerado = adapter.gerar(UUID.randomUUID());
         String adulterado = gerado.valor().substring(0, gerado.valor().length() - 4) + "abcd";
@@ -35,19 +52,23 @@ class JwtTokenAdapterTest {
     @Test
     void deveRejeitarTokenAssinadoComOutraChave() {
         JwtTokenAdapter outroEmissor = new JwtTokenAdapter(
-                new JwtProperties("outra-chave-completamente-diferente-com-32-caracteres", 15));
+                new JwtProperties("outra-chave-completamente-diferente-com-32-caracteres"));
         TokenAcesso gerado = outroEmissor.gerar(UUID.randomUUID());
 
         assertThatThrownBy(() -> adapter.validar(gerado.valor())).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    void deveRejeitarTokenExpirado() {
-        JwtTokenAdapter adapterJaExpirado = new JwtTokenAdapter(
-                new JwtProperties("chave-de-teste-com-pelo-menos-32-caracteres-para-hs256", -1));
-        TokenAcesso gerado = adapterJaExpirado.gerar(UUID.randomUUID());
+    void tokenAntigoQueAindaTemExpVencidoContinuaRejeitado() {
+        UUID usuarioId = UUID.randomUUID();
+        String legado = Jwts.builder()
+                .subject(usuarioId.toString())
+                .id(UUID.randomUUID().toString())
+                .issuedAt(new Date(System.currentTimeMillis() - 3_600_000))
+                .expiration(new Date(System.currentTimeMillis() - 60_000))
+                .signWith(Keys.hmacShaKeyFor(SEGREDO.getBytes(StandardCharsets.UTF_8)))
+                .compact();
 
-        assertThatThrownBy(() -> adapterJaExpirado.validar(gerado.valor()))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> adapter.validar(legado)).isInstanceOf(IllegalArgumentException.class);
     }
 }

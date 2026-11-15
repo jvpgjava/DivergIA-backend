@@ -15,8 +15,8 @@ public class TokenRevogadoRepositoryAdapter implements TokenRevogadoPort {
     }
 
     @Override
-    public void revogar(String jti, Instant expiraEm) {
-        repository.save(new TokenRevogadoJpaEntity(jti, expiraEm));
+    public void revogar(String jti) {
+        repository.save(new TokenRevogadoJpaEntity(jti, Instant.now()));
     }
 
     @Override

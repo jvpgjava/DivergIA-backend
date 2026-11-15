@@ -20,6 +20,6 @@ public class EncerrarSessaoService implements EncerrarSessaoUseCase {
     @Override
     public void encerrar(String tokenBruto) {
         TokenAcesso token = tokenPort.validar(tokenBruto);
-        tokenRevogadoPort.revogar(token.jti(), token.expiraEm());
+        tokenRevogadoPort.revogar(token.jti());
     }
 }

@@ -133,7 +133,6 @@ Regra de dependência: `adapter → application → domain`, nunca o inverso.
 | Variável              | Uso                                            | Default no perfil `dev`      |
 |------------------------|--------------------------------------------------|--------------------------------|
 | `JWT_SECRET`           | Chave de assinatura do JWT (HS256, mín. 32 chars) | placeholder inseguro (só dev)  |
-| `JWT_EXPIRACAO_MINUTOS`| Validade do access token                          | `15`                            |
 | `GMAIL_USERNAME`       | Conta Gmail usada para enviar e-mail de recuperação | vazio (envio falha sem isso)  |
 | `GMAIL_APP_PASSWORD`   | *App Password* do Gmail (não é a senha da conta)  | vazio                           |
 

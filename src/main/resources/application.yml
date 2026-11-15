@@ -61,7 +61,6 @@ divergia:
     output-dimensionality: 768
   jwt:
     secret: ${JWT_SECRET:dev-only-insecure-jwt-secret-nao-usar-em-producao-32bytes}
-    expiracao-minutos: ${JWT_EXPIRACAO_MINUTOS:15}
   recuperacao-senha:
     validade-minutos: 30
   rate-limit:
