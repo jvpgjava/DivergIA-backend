@@ -24,7 +24,7 @@ class TokenRevogadoPersistenceTest {
     @Test
     void devePersistirEVerificarExistenciaDeTokenRevogado() {
         String jti = UUID.randomUUID().toString();
-        entityManager.persistAndFlush(new TokenRevogadoJpaEntity(jti, Instant.now().plusSeconds(900)));
+        entityManager.persistAndFlush(new TokenRevogadoJpaEntity(jti, Instant.now()));
         entityManager.clear();
 
         assertThat(repository.existsById(jti)).isTrue();

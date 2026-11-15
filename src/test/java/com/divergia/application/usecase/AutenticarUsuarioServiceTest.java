@@ -42,7 +42,7 @@ class AutenticarUsuarioServiceTest {
     void deveAutenticarERetornarTokenQuandoCredenciaisCorretas() {
         UUID usuarioId = UUID.randomUUID();
         Usuario usuario = new Usuario(usuarioId, "Ana", "ana@example.com", "hash", Instant.now(), null);
-        TokenAcesso tokenEsperado = new TokenAcesso("jwt-valor", "jti-1", usuarioId, Instant.now().plusSeconds(900));
+        TokenAcesso tokenEsperado = new TokenAcesso("jwt-valor", "jti-1", usuarioId);
 
         given(usuarioRepository.buscarPorEmail("ana@example.com")).willReturn(Optional.of(usuario));
         given(passwordEncoder.confere("senha12345", "hash")).willReturn(true);
