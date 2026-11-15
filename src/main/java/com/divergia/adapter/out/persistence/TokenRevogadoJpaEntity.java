@@ -14,22 +14,22 @@ public class TokenRevogadoJpaEntity {
     @Id
     private String jti;
 
-    @Column(name = "expira_em", nullable = false)
-    private Instant expiraEm;
+    @Column(name = "revogado_em", nullable = false)
+    private Instant revogadoEm;
 
     protected TokenRevogadoJpaEntity() {
     }
 
-    public TokenRevogadoJpaEntity(String jti, Instant expiraEm) {
+    public TokenRevogadoJpaEntity(String jti, Instant revogadoEm) {
         this.jti = jti;
-        this.expiraEm = expiraEm;
+        this.revogadoEm = revogadoEm;
     }
 
     public String getJti() {
         return jti;
     }
 
-    public Instant getExpiraEm() {
-        return expiraEm;
+    public Instant getRevogadoEm() {
+        return revogadoEm;
     }
 }

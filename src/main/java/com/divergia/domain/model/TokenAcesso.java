@@ -1,10 +1,9 @@
 package com.divergia.domain.model;
 
-import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-public record TokenAcesso(String valor, String jti, UUID usuarioId, Instant expiraEm) {
+public record TokenAcesso(String valor, String jti, UUID usuarioId) {
 
     public TokenAcesso {
         if (valor == null || valor.isBlank()) {
@@ -14,6 +13,5 @@ public record TokenAcesso(String valor, String jti, UUID usuarioId, Instant expi
             throw new IllegalArgumentException("jti não pode ser vazio");
         }
         Objects.requireNonNull(usuarioId, "usuarioId não pode ser nulo");
-        Objects.requireNonNull(expiraEm, "expiraEm não pode ser nulo");
     }
 }

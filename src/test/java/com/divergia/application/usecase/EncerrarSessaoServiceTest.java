@@ -26,12 +26,11 @@ class EncerrarSessaoServiceTest {
     @Test
     void deveRevogarOJtiDoTokenValidado() {
         EncerrarSessaoService service = new EncerrarSessaoService(tokenPort, tokenRevogadoPort);
-        Instant expiraEm = Instant.now().plusSeconds(900);
-        TokenAcesso token = new TokenAcesso("jwt-bruto", "jti-123", UUID.randomUUID(), expiraEm);
+        TokenAcesso token = new TokenAcesso("jwt-bruto", "jti-123", UUID.randomUUID());
         given(tokenPort.validar("jwt-bruto")).willReturn(token);
 
         service.encerrar("jwt-bruto");
 
-        verify(tokenRevogadoPort).revogar("jti-123", expiraEm);
+        verify(tokenRevogadoPort).revogar("jti-123");
     }
 }
